@@ -1,0 +1,37 @@
+{
+    "__comment": [
+        "1000-1999: Errores de validación",
+        "2000-2999: Errores de autenticación y autorización",
+        "3000-3999: Errores relacionados con la base de datos",
+        "4000-4999: Errores de lógica de negocio",
+        "5000-5999: Errores del servidor"
+    ],
+    "REGISTER_INVALID_FIELDS": {
+        "code": 1001,
+        "message": "Some required fields for registration are missing or invalid"
+    },
+    "REGISTER_LOGINID_EXISTS": {
+        "code": 1002,
+        "message": "The loginId already exists"
+    },
+    "REGISTER_INVALID_ROLES": {
+        "code": 1003,
+        "message": "The role/s are invalid"
+    },
+    "REGISTER_DNI_EXISTS": {
+        "code": 1004,
+        "message": "The dni already exists"
+    },
+    "REGISTER_INVALID_ADULT_FIELDS": {
+        "code": 1005,
+        "message": "Some required fields for adult registration are missing or invalid"
+    },
+    "REGISTER_EMAIL_EXISTS": {
+        "code": 1006,
+        "message": "The email already exists"
+    },
+    "LOGIN_MISSING_FIELDS": {
+        "code": 2001,
+        "message": "Some required fields for login are missing"
+    }
+}
