@@ -30,6 +30,10 @@
         "code": 1006,
         "message": "The email already exists"
     },
+    "GETUSER_INVALID_FILTER": {
+        "code": 1007,
+        "message": "The filter is invalid"
+    },
     "LOGIN_MISSING_FIELDS": {
         "code": 2001,
         "message": "Some required fields for login are missing"
