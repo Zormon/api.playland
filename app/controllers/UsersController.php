@@ -1,14 +1,21 @@
 <?php
 
 namespace App\Controllers;
+
+use Leaf\Http\Request;
+use Leaf\Helpers\Password;
+
 use App\Models\User;
 use App\Models\Adulto;
-use Leaf\Http\Request;
+
 use Lib\Err;
 use Lib\Cache;
 
 
 class UsersController extends Controller {
+    private const CACHE_KEY_ALL = 'users:all';
+    private const CACHE_KEY_FILTER = 'users:filter-';
+
     /**
      * Responde con todos los usuarios de la plataforma.
      *
@@ -16,38 +23,35 @@ class UsersController extends Controller {
     public function all() {
         // Si no puede ver todos los usuarios
         if (!auth()->user()->can('users:viewall')) {
-            response()->plain(null, 403);
+            response()->exit(null, 403);
         }
 
         // Parámetros de la petición.
-        $params = new \stdClass;
-        $params->nocache = request()->get('nocache') ? true : false;
-        $params->filter = request()->get('filter');
-        $params->range = request()->get('range');
+        $p_nocache = request()->get('nocache') ? true : false;
+        $p_filter = request()->get('filter');
 
-
-        $cacheKey = 'users:all/json';
-        if ($params->filter) {
+        $cacheKey = self::CACHE_KEY_ALL;
+        if ($p_filter) {
             // Si hay filtros especificados
-            $cacheKey = 'users:filter-' . $params->filter . '/json';
-            if ($params->nocache || !$userlist = Cache::get($cacheKey)) {
-                $userlist = match ($params->filter) {
+            $cacheKey = self::CACHE_KEY_FILTER . $p_filter;
+            if ($p_nocache || !$json = Cache::get($cacheKey)) {
+                $json = match ($p_filter) {
                     'adulto'    => json_encode(User::with('adulto')->has('adulto')->get()),
                     'noadulto'  => json_encode(User::doesntHave('adulto')->get()),
-                    default     => response()->json(Err::get('GETUSER_INVALID_FILTER'), 400),
+                    default     => response()->exit(null, 400),
                 };
-                if ($userlist === null) { return; }
+                if ($json === null) { return; }
             }
         } else {
             // Si no hay filtros, devolver todos los usuarios.
-            if ($params->nocache || !$userlist = Cache::get($cacheKey)) {
-                $userlist = json_encode(User::with('adulto')->get());
+            if ($p_nocache || !$json = Cache::get($cacheKey)) {
+                $json = json_encode(User::with('adulto')->get());
             }
         }
 
-        Cache::set($cacheKey, $userlist, 3600 * 24 * 30); // 30 días
+        Cache::set($cacheKey, $json, 3600 * 24 * 30); // 30 días
         response()->withHeader('Content-Type', 'application/json');
-        response()->custom($userlist, 200);
+        response()->custom($json, 200);
     }
 
     /**
@@ -56,19 +60,83 @@ class UsersController extends Controller {
      * @param int $id ID del usuario a devolver.
      */
     public function get(int $id) {
-        if (!( // Si no puede ver todos los usuario y está intentando ver otro o no puede ver su propio usuario
-            auth()->user()->can('users:viewall')
-            || (auth()->user()->can('users:viewself') && auth()->user()->id() == $id)
-        )) {
-            response()->plain(null, 403);
+        // Buscar el usuario.
+        if (!$user = User::with('adulto')->find($id)) {
+            response()->exit(null, 404);
         }
 
-        // Buscar el usuario.
-        $user = User::with('adulto')->find($id);
-        if (empty($user)) {
-            response()->plain(null, 404);
+        // Si no puede ver todos los usuarios y no es el usuario que intenta ver
+        if (auth()->user()->id() != $id && !auth()->user()->can('users:viewall')) {
+            response()->exit(null, 403);
         }
+
         response()->json($user);
+    }
+
+    /**
+     * Actualiza un usuario específico y limpia la caché.
+     *
+     * @param int $id The ID of the user to update.
+     */
+    public function update($id) {
+        // Buscar el usuario.
+        if (!$user = User::find($id)) {
+            response()->exit(null, 404);
+        }
+
+        // Si no puede editar todos los usuarios y está intentando editar otro o no puede editar su propio usuario
+        if (!( auth()->user()->can('users:editall')
+            || (auth()->user()->can('users:editself') && auth()->user()->id() == $id)
+        )) {
+            response()->exit(null, 403);
+        }
+
+        // Validar los datos recibidos.
+        try {
+            [$userData, $adultoData] = $this->getUserPostData(request(), $id);
+        } catch (\Exception $e) {
+            response()->exit(Err::get($e->getMessage()), $e->getCode());
+        }
+
+        // Actualizar el adulto, si se ha enviado.
+        if (!empty($adultoData)) {
+            if (!$adulto = Adulto::where('user_id', $id)->first()) {
+                response()->exit(Err::get('ADULT_NOT_FOUND'), 404);
+            }
+
+            $adulto->update($adultoData);
+        }
+
+        // Actualizar el usuario.
+        $updated = $user->update([
+            'loginid' => $userData['loginid'],
+            'password' => Password::hash($userData['password']),
+            'roles' => json_encode($userData['roles']),
+        ]);
+
+        // TODO: Reasignar los roles enviados.
+
+        if (!$updated) {
+            response()->exit(auth()->errors(), 422);
+        }
+
+        Cache::delete(self::CACHE_KEY_ALL);
+        response()->noContent();
+    }
+
+    public function delete($id) {
+        // Buscar el usuario.
+        if (!$user = User::find($id)) {
+            response()->exit(null, 404);
+        }
+
+        // Comprobar permiso.
+        if (!auth()->user()->can('users:delete')) {
+            response()->exit(null, 403);
+        }
+
+        $user->delete();
+        response()->noContent();
     }
 
     /*
@@ -76,7 +144,11 @@ class UsersController extends Controller {
      * @TODO: Permitir solo a los usuarios con permiso 'users:create' crear usuarios y usar otra via para el registro.
      */
     public function create() {
-        [$userData, $adultoData] = $this->getUserPostData(request());
+        try {
+            [$userData, $adultoData] = $this->getUserPostData(request());
+        } catch (\Exception $e) {
+            response()->exit(Err::get($e->getMessage()), $e->getCode());
+        }
 
         // Crear el usuario.
         $user = auth()->createUserFor([
@@ -86,8 +158,7 @@ class UsersController extends Controller {
 
         // Si el usuario no se ha creado, devolver el motivo.
         if (!$user) {
-            response()->json(auth()->errors(), 422);
-            return;
+            response()->exit(auth()->errors(), 422);
         }
 
         // Asignar los roles al usuario.
@@ -100,59 +171,8 @@ class UsersController extends Controller {
             $adulto->save();
         }
 
-        response()->plain(null, 201);
-    }
-
-    public function update($id) {
-        if (!( // Si no puede editar todos los usuarios y está intentando editar otro o no puede editar su propio usuario
-            auth()->user()->can('users:editall')
-            || (auth()->user()->can('users:editself') && auth()->user()->id() == $id)
-        )) {
-            response()->plain(null, 403);
-        }
-
-        $user = auth()->find($id);
-
-        // Comprobar que existe el usuario.
-        if (empty($user)) {
-            response()->plain(null, 404);
-            return;
-        }
-
-        [$userData, $adultoData] = $this->getUserPostData(request(), $id);
-
-        // Actualizar el usuario.
-        if (!empty($adultoData)) {
-        }
-
-        $updated = $user->update([
-            'loginid' => $userData['loginid'],
-            'password' => $userData['password'],
-        ]);
-
-        if (!$updated) {
-            response()->json(auth()->errors(), 422);
-            return;
-        }
-    }
-
-    public function delete($id) {
-        // Comprobar permiso.
-        if (!auth()->user()->can('users:delete')) {
-            response()->plain(null, 403);
-        }
-
-        // Comprobar que existe el usuario.
-        $user = User::with('adulto')->find($id);
-        if (empty($user)) {
-            response()->plain(null, 404);
-            return;
-        }
-
-        // Eliminar el usuario.
-        $user->adulto->delete();
-        $user->delete();
-        response()->plain(null, 204);
+        Cache::delete(self::CACHE_KEY_ALL);
+        response()->noContent();
     }
 
     /**
@@ -161,21 +181,20 @@ class UsersController extends Controller {
      *
      * @param Request $request Petición recibida.
      * @param int|null $exclude Id de usuario a excluir de la comprobación de duplicados (para actualizaciones).
-     * @return array|bool Datos del usuario si son válidos, false si no lo son.
-     * @comprobar si el usuario ya existe, y también usar throw en lugar de devolver false
+     * @return array Datos del usuario si son válidos.
+     * @throws \Exception Si los datos no son válidos.
      */
-    private function getUserPostData(Request $request, ?int $exclude = null): array|bool {
+    private function getUserPostData(Request $request, ?int $exclude = null): array {
         // Validar los datos recibidos.
         $userData = $request->validate([
             'loginid' => 'string|min:3',
             'password' => 'string|min:8',
-            'roles' => 'array',
+            'roles' => 'array<string>',
         ]);
 
         // Si los datos no son válidos, devolver error.
         if (!$userData) {
-            response()->json(Err::get('REGISTER_INVALID_FIELDS'), 400);
-            return false;
+            throw new \Exception('INVALID_FIELDS', 400);
         }
 
         // Si ya existe el loginid, devolver error.
@@ -183,14 +202,12 @@ class UsersController extends Controller {
             ? User::where('loginid', $userData['loginid'])->where('id', '!=', $exclude)->exists()
             : User::where('loginid', $userData['loginid'])->exists();
         if ($loginIdDuplicate) {
-            response()->json(Err::get('REGISTER_LOGINID_EXISTS'), 409);
-            return false;
+            throw new \Exception('USER_ALREADY_EXISTS', 409);
         }
 
         // Comprobar que los roles recibidos existen.
         if (!empty(array_diff_key(array_flip($userData['roles']), auth()->roles()))) {
-            response()->json(Err::get('REGISTER_INVALID_ROLES'), 400);
-            return false;
+            throw new \Exception('INVALID_ROLES', 400);
         }
 
         // Si se envía DNI, se debe recibir todos los datos de un adulto.
@@ -199,14 +216,13 @@ class UsersController extends Controller {
                 'DNI' => 'string|min:7|max:15',
                 'nombre' => 'string|min:6',
                 'email' => 'email',
-                'publi' => 'boolean',
+                'publi' => 'in:[true,false]',
                 'telefono' => 'optional|string|min:7|max:14',
             ]);
 
             // Si los datos de adulto no son válidos, devolver error.
             if (!$adulto) {
-                response()->json(Err::get('REGISTER_INVALID_ADULT_FIELDS'), 400);
-                return false;
+                throw new \Exception('INVALID_FIELDS', 400);
             }
 
             // Si el DNI ya existe, devolver error.
@@ -214,8 +230,7 @@ class UsersController extends Controller {
                 ? Adulto::where('DNI', $adulto['DNI'])->where('user_id', '!=', $exclude)->exists()
                 : Adulto::where('DNI', $adulto['DNI'])->exists();
             if ($dniDuplicate) {
-                response()->json(Err::get('REGISTER_DNI_EXISTS'), 409);
-                return false;
+                throw new \Exception('DNI_ALREADY_EXISTS', 409);
             }
 
             // Si el email ya existe, devolver error.
@@ -223,11 +238,10 @@ class UsersController extends Controller {
                 ? Adulto::where('email', $adulto['email'])->where('user_id', '!=', $exclude)->exists()
                 : Adulto::where('email', $adulto['email'])->exists();
             if ($emailDuplicate) {
-                response()->json(Err::get('REGISTER_EMAIL_EXISTS'), 409);
-                return false;
+                throw new \Exception('EMAIL_ALREADY_EXISTS', 409);
             }
 
-            $adulto['publi'] = $adulto['publi'] ? 1 : 0;
+            $adulto['publi'] = $adulto['publi'] == 'true' ? 1 : 0;
         }
 
         return [$userData, $adulto ?? null];
