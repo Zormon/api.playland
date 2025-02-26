@@ -34,7 +34,8 @@
         "leafs/form": "^3.0",
         "leafs/http": "^3.0",
         "leafs/aloe": "^2.3",
-        "predis/predis": "^2.3"
+        "predis/predis": "^2.3",
+        "leafs/cors": "^1.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.16",

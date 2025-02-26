@@ -10,7 +10,7 @@ class AuthController extends Controller {
             'password' => 'string',
           ]);
         if (!$loginData) {
-            response()->json(Err::get('LOGIN_MISSING_FIELDS'), 400);
+            response()->json(Err::get('INVALID_FIELDS'), 400);
             return;
         }
 

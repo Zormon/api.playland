@@ -6,36 +6,28 @@
         "4000-4999: Errores de lógica de negocio",
         "5000-5999: Errores del servidor"
     ],
-    "REGISTER_INVALID_FIELDS": {
+    "INVALID_FIELDS": {
         "code": 1001,
-        "message": "Some required fields for registration are missing or invalid"
+        "message": "Some required fields are missing or invalid"
     },
-    "REGISTER_LOGINID_EXISTS": {
+    "USER_ALREADY_EXISTS": {
         "code": 1002,
         "message": "The loginId already exists"
     },
-    "REGISTER_INVALID_ROLES": {
+    "INVALID_ROLES": {
         "code": 1003,
         "message": "The role/s are invalid"
     },
-    "REGISTER_DNI_EXISTS": {
+    "DNI_ALREADY_EXISTS": {
         "code": 1004,
         "message": "The dni already exists"
     },
-    "REGISTER_INVALID_ADULT_FIELDS": {
-        "code": 1005,
-        "message": "Some required fields for adult registration are missing or invalid"
-    },
-    "REGISTER_EMAIL_EXISTS": {
+    "EMAIL_ALREADY_EXISTS": {
         "code": 1006,
         "message": "The email already exists"
     },
-    "GETUSER_INVALID_FILTER": {
-        "code": 1007,
-        "message": "The filter is invalid"
-    },
-    "LOGIN_MISSING_FIELDS": {
-        "code": 2001,
-        "message": "Some required fields for login are missing"
+    "ADULT_NOT_FOUND": {
+        "code": 1008,
+        "message": "The adult does not exist"
     }
 }

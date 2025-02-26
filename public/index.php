@@ -85,7 +85,7 @@ auth()->middleware('auth.guest',    function() { response()->plain(null, 401); }
 */
 auth()->createRoles([
     'admin' => ['users:viewall', 'users:editall', 'users:delete'],
-    'adulto' => ['users:viewself', 'users:editself'],
+    'adulto' => ['users:editself'],
     'guest' => [],
 ]);
 
