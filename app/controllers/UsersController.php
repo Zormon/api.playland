@@ -13,8 +13,17 @@ use Lib\Cache;
 
 
 class UsersController extends Controller {
-    private const CACHE_KEY_ALL = 'users:all';
-    private const CACHE_KEY_FILTER = 'users:filter-';
+    private const array CACHE_KEYS = [
+        'all' => 'users:all',
+        'adulto' => 'users:filter-adulto',
+        'noadulto' => 'users:filter-noadulto',
+    ];
+
+    private const ESTADO = [
+        'activo',
+        'email',
+        'password',
+    ];
 
     /**
      * Responde con todos los usuarios de la plataforma.
@@ -30,10 +39,10 @@ class UsersController extends Controller {
         $p_nocache = request()->get('nocache') ? true : false;
         $p_filter = request()->get('filter');
 
-        $cacheKey = self::CACHE_KEY_ALL;
+        $cacheKey = self::CACHE_KEYS['all'];
         if ($p_filter) {
             // Si hay filtros especificados
-            $cacheKey = self::CACHE_KEY_FILTER . $p_filter;
+            $cacheKey = self::CACHE_KEYS[$p_filter] ?? null;
             if ($p_nocache || !$json = Cache::get($cacheKey)) {
                 $json = match ($p_filter) {
                     'adulto'    => json_encode(User::with('adulto')->has('adulto')->get()),
@@ -73,6 +82,38 @@ class UsersController extends Controller {
         response()->json($user);
     }
 
+    /*
+     * De momento, cualquier usuario puede crear usuarios (para el registro).
+     * @TODO: Permitir solo a los usuarios con permiso 'users:create' crear usuarios y usar otra via para el registro.
+     */
+    public function create() {
+        [$userData, $adultoData] = $this->getUserPostData(request());
+
+        // Crear el usuario.
+        $user = auth()->createUserFor([
+            'loginid' => $userData['loginid'],
+            'password' => $userData['password'],
+        ]);
+
+        // Si el usuario no se ha creado, devolver el motivo.
+        if (!$user) {
+            response()->exit(auth()->errors(), 422);
+        }
+
+        // Asignar los roles al usuario.
+        $user->assign($userData['roles']);
+
+        // Si se ha enviado un adulto, crearlo.
+        if ($adultoData) {
+            $adulto = new Adulto($adultoData);
+            $adulto->user_id = $user->id;
+            $adulto->save();
+        }
+
+        Cache::delete(self::CACHE_KEYS);
+        response()->noContent();
+    }
+
     /**
      * Actualiza un usuario específico y limpia la caché.
      *
@@ -92,11 +133,7 @@ class UsersController extends Controller {
         }
 
         // Validar los datos recibidos.
-        try {
-            [$userData, $adultoData] = $this->getUserPostData(request(), $id);
-        } catch (\Exception $e) {
-            response()->exit(Err::get($e->getMessage()), $e->getCode());
-        }
+        [$userData, $adultoData] = $this->getUserPostData(request(), $id);
 
         // Actualizar el adulto, si se ha enviado.
         if (!empty($adultoData)) {
@@ -120,7 +157,61 @@ class UsersController extends Controller {
             response()->exit(auth()->errors(), 422);
         }
 
-        Cache::delete(self::CACHE_KEY_ALL);
+        Cache::delete(self::CACHE_KEYS);
+        response()->noContent();
+    }
+
+    /**
+     * Función para actualizar los datos de un adulto desde la taquilla.
+     * @param mixed $id
+     * @return void
+     */
+    public function patch($id) {
+        // Buscar el usuario.
+        if (!$user = User::find($id)) {
+            response()->exit(null, 404);
+        }
+
+        // Comprobar que el adulto existe.
+        if (!$adulto = Adulto::where('user_id', $id)->first()) {
+            response()->exit(Err::get('ADULT_NOT_FOUND'), 404);
+        }
+
+        // Si no puede editar todos los usuarios y está intentando editar otro o no puede editar su propio usuario
+        if (!( auth()->user()->can('users:editall')
+            || (auth()->user()->can('users:editself') && auth()->user()->id() == $id)
+        )) {
+            response()->exit(null, 403);
+        }
+
+        // Validar los datos recibidos.
+        $postData = request()->validate([
+            'loginid' => 'string|min:3|max:20',
+            'password' => 'optional|string|min:4|max:32',
+            'adulto.DNI' => 'string|min:7|max:15',
+            'adulto.nombre' => 'string|min:6|max:80',
+            'adulto.email' => 'email',
+            'adulto.publi' => 'optional|boolean',
+            'adulto.telefono' => 'optional|string|min:7|max:14',
+            'adulto.estado' => 'in:[' . implode(',', self::ESTADO) . ']',
+        ]);
+
+        // Si los datos no son válidos, devolver error.
+        if (!$postData) {
+            if ( app()->config('debug') == 'true' ) {
+                response()->exit(request()->errors(), 400);
+            }
+            response()->exit(Err::get('INVALID_FIELDS'), 400);
+        }
+
+        // Actualizar el usuario y el adulto.
+        $user->update(['loginid' => $postData['loginid']]);
+        if (!empty($postData['password'])) {
+            $user->update(['password' => Password::hash($postData['password'])]);
+        }
+        $adulto->update($postData['adulto']);
+
+        Cache::delete(self::CACHE_KEYS);
         response()->noContent();
     }
 
@@ -136,101 +227,75 @@ class UsersController extends Controller {
         }
 
         $user->delete();
-        response()->noContent();
-    }
-
-    /*
-     * De momento, cualquier usuario puede crear usuarios (para el registro).
-     * @TODO: Permitir solo a los usuarios con permiso 'users:create' crear usuarios y usar otra via para el registro.
-     */
-    public function create() {
-        try {
-            [$userData, $adultoData] = $this->getUserPostData(request());
-        } catch (\Exception $e) {
-            response()->exit(Err::get($e->getMessage()), $e->getCode());
-        }
-
-        // Crear el usuario.
-        $user = auth()->createUserFor([
-            'loginid' => $userData['loginid'],
-            'password' => $userData['password'],
-        ]);
-
-        // Si el usuario no se ha creado, devolver el motivo.
-        if (!$user) {
-            response()->exit(auth()->errors(), 422);
-        }
-
-        // Asignar los roles al usuario.
-        $user->assign($userData['roles']);
-
-        // Si se ha enviado un adulto, crearlo.
-        if ($adultoData) {
-            $adulto = new Adulto($adultoData);
-            $adulto->user_id = $user->id;
-            $adulto->save();
-        }
-
-        Cache::delete(self::CACHE_KEY_ALL);
+        Cache::delete(self::CACHE_KEYS);
         response()->noContent();
     }
 
     /**
      * Comprueba los datos del usuario recibidos en la petición y los devuelve
      * Si se reciben datos de adulto, también se validan y se añade al array devuelto.
+     * Si hay errores, se termina la petición con el error correspondiente.
      *
      * @param Request $request Petición recibida.
      * @param int|null $exclude Id de usuario a excluir de la comprobación de duplicados (para actualizaciones).
-     * @return array Datos del usuario si son válidos.
-     * @throws \Exception Si los datos no son válidos.
+     * @return array Datos del usuario si son válidos. 
      */
     private function getUserPostData(Request $request, ?int $exclude = null): array {
         // Validar los datos recibidos.
-        $userData = $request->validate([
-            'loginid' => 'string|min:3',
-            'password' => 'string|min:8',
-            'roles' => 'array<string>',
+        $reqBody = $request->validate([
+            'loginid' => 'string|min:3|max:20',
+            'password' => 'string|min:4|max:32',
+            'roles' => 'optional|array<string>',
         ]);
 
         // Si los datos no son válidos, devolver error.
-        if (!$userData) {
-            throw new \Exception('INVALID_FIELDS', 400);
+        if (!$reqBody) {
+            if ( app()->config('debug') == 'true' ) {
+                response()->exit(request()->errors(), 400);
+            }
+            response()->exit(Err::get('INVALID_FIELDS'), 400);
         }
 
         // Si ya existe el loginid, devolver error.
         $loginIdDuplicate = $exclude
-            ? User::where('loginid', $userData['loginid'])->where('id', '!=', $exclude)->exists()
-            : User::where('loginid', $userData['loginid'])->exists();
+            ? User::where('loginid', $reqBody['loginid'])->where('id', '!=', $exclude)->exists()
+            : User::where('loginid', $reqBody['loginid'])->exists();
         if ($loginIdDuplicate) {
-            throw new \Exception('USER_ALREADY_EXISTS', 409);
+            response()->exit(Err::get('USER_ALREADY_EXISTS'), 409);
         }
 
-        // Comprobar que los roles recibidos existen.
-        if (!empty(array_diff_key(array_flip($userData['roles']), auth()->roles()))) {
-            throw new \Exception('INVALID_ROLES', 400);
+        if (empty($reqBody['roles'])) {
+            $reqBody['roles'] = ['adulto'];
+        // Comprobar que los roles recibidos existen si se han enviado.
+        } else if (!empty(array_diff_key(array_flip($reqBody['roles']), auth()->roles()))) {
+            response()->exit(Err::get('INVALID_ROLES'), 400);
         }
 
         // Si se envía DNI, se debe recibir todos los datos de un adulto.
-        if ($request->get('DNI')) {
+        if ($request->get('adulto')) {
             $adulto = $request->validate([
-                'DNI' => 'string|min:7|max:15',
-                'nombre' => 'string|min:6',
-                'email' => 'email',
-                'publi' => 'in:[true,false]',
-                'telefono' => 'optional|string|min:7|max:14',
+                'adulto.DNI' => 'string|min:7|max:15',
+                'adulto.nombre' => 'string|min:6',
+                'adulto.email' => 'email',
+                'adulto.publi' => 'optional|boolean',
+                'adulto.telefono' => 'optional|string|min:7|max:14',
             ]);
 
             // Si los datos de adulto no son válidos, devolver error.
             if (!$adulto) {
-                throw new \Exception('INVALID_FIELDS', 400);
+                if ( app()->config('debug') == 'true' ) {
+                    response()->exit(request()->errors(), 400);
+                }
+                response()->exit(Err::get('INVALID_FIELDS'), 400);
             }
+            $adulto = $adulto['adulto'];
 
             // Si el DNI ya existe, devolver error.
             $dniDuplicate = $exclude
                 ? Adulto::where('DNI', $adulto['DNI'])->where('user_id', '!=', $exclude)->exists()
                 : Adulto::where('DNI', $adulto['DNI'])->exists();
             if ($dniDuplicate) {
-                throw new \Exception('DNI_ALREADY_EXISTS', 409);
+                response()->exit(Err::get('DNI_ALREADY_EXISTS'), 409);
             }
 
             // Si el email ya existe, devolver error.
@@ -238,12 +303,10 @@ class UsersController extends Controller {
                 ? Adulto::where('email', $adulto['email'])->where('user_id', '!=', $exclude)->exists()
                 : Adulto::where('email', $adulto['email'])->exists();
             if ($emailDuplicate) {
-                throw new \Exception('EMAIL_ALREADY_EXISTS', 409);
+                response()->exit(Err::get('EMAIL_ALREADY_EXISTS'), 409);
             }
-
-            $adulto['publi'] = $adulto['publi'] == 'true' ? 1 : 0;
         }
 
-        return [$userData, $adulto ?? null];
+        return [$reqBody, $adulto ?? null];
     }
 }

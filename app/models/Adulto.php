@@ -11,6 +11,7 @@ class Adulto extends Model {
         'email',
         'publi',
         'telefono',
+        'estado',
         'user_id',
     ];
 }

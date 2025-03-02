@@ -93,6 +93,11 @@ auth()->createRoles([
 // Iniciar singleton a la base de datos
 // \Leaf\Database::initDb();
 
+if (env("APP_SLOW")) {
+    $secs = rand(5, 40) / 10;
+    usleep(1000*1000*$secs);
+}
+
 /*
 |--------------------------------------------------------------------------
 | Run your Leaf MVC application

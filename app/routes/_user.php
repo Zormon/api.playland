@@ -1,21 +1,22 @@
 <?php
 
-use App\Middleware\UserExistMiddleware;
-
 app()->group('user', ['middleware' => 'auth.required', function () {
-    // Get all users
+    // Obtener todos los usuarios
     app()->get('/', 'UsersController@all');
 
-    // Get a single user
+    // Obtener un usuario específico
     app()->get('/(\d+)', ['UsersController@get']);
 
-    // Create a new user
+    // Crear usuario
     app()->post('/', 'UsersController@create');
 
-    // Update a user
+    // Actualizar usuario
     app()->put('/(\d+)', 'UsersController@update');
 
-    // Delete a user
+    // Actualizar adulto (para taquilla)
+    app()->patch('/(\d+)', 'UsersController@patch');
+
+    // Eliminar usuario
     app()->delete('/(\d+)', 'UsersController@delete');
     
 }]);
