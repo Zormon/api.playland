@@ -11,7 +11,12 @@ use App\Models\Adulto;
 use Lib\Err;
 use Lib\Cache;
 
-
+/**
+ * Controlador para la gestión de usuarios.
+ * 
+ * @todo: los adultos deberían ser gestionados por otro controlador con otro endpoint y tener los métodos PUT y PATCH adecuados.
+ * Actualmente los adultos se actualizan con el método PATCH de este controlador.
+ */
 class UsersController extends Controller {
     private const array CACHE_KEYS = [
         'all' => 'users:all',
@@ -163,6 +168,7 @@ class UsersController extends Controller {
 
     /**
      * Función para actualizar los datos de un adulto desde la taquilla.
+     * @TODO: Crear un controlador específico para los adultos.
      * @param mixed $id
      * @return void
      */
@@ -190,7 +196,7 @@ class UsersController extends Controller {
             'password' => 'optional|string|min:4|max:32',
             'adulto.DNI' => 'string|min:7|max:15',
             'adulto.nombre' => 'string|min:6|max:80',
-            'adulto.email' => 'email',
+            'adulto.email' => 'optional|email',
             'adulto.publi' => 'optional|boolean',
             'adulto.telefono' => 'optional|string|min:7|max:14',
             'adulto.estado' => 'in:[' . implode(',', self::ESTADO) . ']',
@@ -209,6 +215,11 @@ class UsersController extends Controller {
         if (!empty($postData['password'])) {
             $user->update(['password' => Password::hash($postData['password'])]);
         }
+
+        // Si no se envia email o telefono, se establecen a vacio (esto debería hacerse en el método PUT...).
+        $postData['adulto']['email'] ??= '';
+        $postData['adulto']['telefono'] ??= '';
+
         $adulto->update($postData['adulto']);
 
         Cache::delete(self::CACHE_KEYS);
