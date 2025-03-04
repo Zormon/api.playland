@@ -11,7 +11,7 @@ app()->group('user', ['middleware' => 'auth.required', function () {
     app()->post('/', 'UsersController@create');
 
     // Actualizar usuario
-    app()->put('/(\d+)', 'UsersController@update');
+    app()->put('/(\d+)', 'UsersController@put');
 
     // Actualizar adulto (para taquilla)
     app()->patch('/(\d+)', 'UsersController@patch');

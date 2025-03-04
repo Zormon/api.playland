@@ -11,7 +11,7 @@ app()->group('equipo', ['middleware' => 'auth.required', function () {
     app()->post('/', 'EquiposController@create');
 
     // Update an equipo
-    app()->put('/(\d+)', 'EquiposController@update');
+    app()->put('/(\d+)', 'EquiposController@put');
 
     // Delete an equipo
     app()->delete('/(\d+)', 'EquiposController@delete');

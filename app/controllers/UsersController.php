@@ -8,6 +8,7 @@ use Leaf\Helpers\Password;
 use App\Models\User;
 use App\Models\Adulto;
 
+use App\Interfaces\ItemController;
 use Lib\Err;
 use Lib\Cache;
 
@@ -17,7 +18,7 @@ use Lib\Cache;
  * @todo: los adultos deberían ser gestionados por otro controlador con otro endpoint y tener los métodos PUT y PATCH adecuados.
  * Actualmente los adultos se actualizan con el método PATCH de este controlador.
  */
-class UsersController extends Controller {
+class UsersController extends Controller implements ItemController {
     private const array CACHE_KEYS = [
         'all' => 'users:all',
         'adulto' => 'users:filter-adulto',
@@ -92,7 +93,7 @@ class UsersController extends Controller {
      * @TODO: Permitir solo a los usuarios con permiso 'users:create' crear usuarios y usar otra via para el registro.
      */
     public function create() {
-        [$userData, $adultoData] = $this->getUserPostData(request());
+        [$userData, $adultoData] = $this->getPostData(request());
 
         // Crear el usuario.
         $user = auth()->createUserFor([
@@ -124,7 +125,7 @@ class UsersController extends Controller {
      *
      * @param int $id The ID of the user to update.
      */
-    public function update($id) {
+    public function put($id) {
         // Buscar el usuario.
         if (!$user = User::find($id)) {
             response()->exit(null, 404);
@@ -138,7 +139,7 @@ class UsersController extends Controller {
         }
 
         // Validar los datos recibidos.
-        [$userData, $adultoData] = $this->getUserPostData(request(), $id);
+        [$userData, $adultoData] = $this->getPostData(request(), $id);
 
         // Actualizar el adulto, si se ha enviado.
         if (!empty($adultoData)) {
@@ -242,16 +243,7 @@ class UsersController extends Controller {
         response()->noContent();
     }
 
-    /**
-     * Comprueba los datos del usuario recibidos en la petición y los devuelve
-     * Si se reciben datos de adulto, también se validan y se añade al array devuelto.
-     * Si hay errores, se termina la petición con el error correspondiente.
-     *
-     * @param Request $request Petición recibida.
-     * @param int|null $exclude Id de usuario a excluir de la comprobación de duplicados (para actualizaciones).
-     * @return array Datos del usuario si son válidos. 
-     */
-    private function getUserPostData(Request $request, ?int $exclude = null): array {
+    private function getPostData(Request $request, ?int $exclude = null): array {
         // Validar los datos recibidos.
         $reqBody = $request->validate([
             'loginid' => 'string|min:3|max:20',

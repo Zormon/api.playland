@@ -1,16 +1,24 @@
 <?php
 
 namespace App\Controllers;
+
+use Leaf\Http\Request;
+
 use App\Models\Equipo;
 use App\Models\Adulto;
-use Leaf\Http\Request;
+
+use App\Interfaces\ItemController;
 use Lib\Err;
 use Lib\Cache;
 
-class EquiposController extends Controller {
+class EquiposController extends Controller implements ItemController {
+    private const array CACHE_KEYS = [
+        'all' => 'equipos:all/json',
+    ];
+
     public function all() {
-        // Si no puede ver todos los usuarios
-        if (!auth()->user()->can('users:viewall')) {
+        // Si no puede ver todos los equipos
+        if (!auth()->user()->can('equipos:viewall')) {
             response()->plain(null, 403);
         }
 
@@ -18,7 +26,7 @@ class EquiposController extends Controller {
         $params = new \stdClass;
         $params->nocache = request()->get('nocache') ? true : false;
 
-        $cacheKey = 'equipos:all/json';
+        $cacheKey = self::CACHE_KEYS['all'];
         if ($params->nocache || !$equipoList = Cache::get($cacheKey)) {
             $equipoList = json_encode(Equipo::all());
             Cache::set($cacheKey, $equipoList, 3600 * 24 * 30); // 30 días
@@ -43,17 +51,20 @@ class EquiposController extends Controller {
         response()->json($equipo);
     }
 
+    // @todo: Implementar permisos
     public function create() {
-        $equipoData = $this->getEquipoPostData(request());
+        $equipoData = $this->getPostData(request());
 
         // Crear el equipo.
         $equipo = new Equipo($equipoData);
         $equipo->save();
 
+        Cache::delete(self::CACHE_KEYS);
         response()->plain(null, 201);
     }
 
-    public function update($id) {
+    // @todo Implementar permisos
+    public function put($id) {
         // Buscar el equipo.
         $equipo = Equipo::find($id);
 
@@ -63,10 +74,17 @@ class EquiposController extends Controller {
             return;
         }
 
-        $equipoData = $this->getEquipoPostData(request(), $id);
+        $equipoData = $this->getPostData(request(), $id);
+        
+        if (!$equipoData) {
+            return;
+        }
 
         // Actualizar el equipo.
         $equipo->update($equipoData);
+        
+        Cache::delete(self::CACHE_KEYS);
+        response()->plain(null, 200);
     }
 
     public function delete($id) {
@@ -85,6 +103,7 @@ class EquiposController extends Controller {
 
         // Eliminar el equipo.
         $equipo->delete();
+        Cache::delete(self::CACHE_KEYS);
         response()->plain(null, 204);
     }
 
@@ -95,27 +114,29 @@ class EquiposController extends Controller {
      * @param int|null $exclude ID del equipo a excluir.
      * @return array|bool Datos del equipo o false si no son válidos.
      */
-    private function getEquipoPostData(Request $request, ?int $exclude = null): array|bool {
+    private function getPostData(Request $request, ?int $exclude = null): array|bool {
         // Validar los datos recibidos.
-        $equipoData = $request->validate([
-            'titulo' => 'string|min:3',
-            'nombre' => 'string|min:3',
+        $reqBody = $request->validate([
+            'titulo' => 'string|min:3|max:80',
+            'nombre' => 'string|min:3|max:80',
             'nacimiento' => 'date',
             'notas' => 'optional|string',
-            'adulto_id' => 'integer',
+            'adulto_id' => 'number',
         ]);
 
-        if (!Adulto::find($equipoData['adulto_id'])) {
-            response()->json(Err::get('ADULT_NOT_FOUND'), 400);
-            return false;
-        }
-
         // Si los datos no son válidos, devolver error.
-        if (!$equipoData) {
-            response()->json(Err::get('INVALID_FIELDS'), 400);
-            return false;
+        if (!$reqBody) {
+            if ( app()->config('debug') == 'true' ) {
+                response()->exit(request()->errors(), 400);
+            }
+            response()->exit(Err::get('INVALID_FIELDS'), 400);
         }
 
-        return $equipoData;
+        // Comprobar que el adulto existe.
+        if (!Adulto::find($reqBody['adulto_id'])) {
+            response()->exit(Err::get('ADULT_NOT_FOUND'), 404);
+        }
+
+        return $reqBody;
     }
 }
