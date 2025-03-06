@@ -3,6 +3,7 @@
 namespace Lib;
 use \Predis\Client;
 
+//TODO: usar la libreria de leafphp para redis en lugar de predis
 class Cache {
     private static $redis;
 
