@@ -38,8 +38,6 @@ class EntradasController extends Controller implements ItemController {
             $entrada->save();
         } catch (QueryException $e) {
             $this->handleDatabaseError($e);
-            // Si el error no fue manejado, lanzar una respuesta genérica
-            response()->exit('Database error occurred', 500);
         }
 
         response()->plain(null, 201);
@@ -57,8 +55,6 @@ class EntradasController extends Controller implements ItemController {
             $entrada->update($entradaData);
         } catch (QueryException $e) {
             $this->handleDatabaseError($e);
-            //
-            response()->exit('Database error occurred', 500);
         }
 
         response()->plain(null, 204);
@@ -73,7 +69,6 @@ class EntradasController extends Controller implements ItemController {
             $entrada->delete();
         } catch (QueryException $e) {
             $this->handleDatabaseError($e);
-            response()->exit('Database error occurred', 500);
         }
 
         response()->plain(null, 204);

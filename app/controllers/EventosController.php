@@ -2,43 +2,56 @@
 
 namespace App\Controllers;
 
-use Leaf\Http\Request;
-
 use App\Models\Evento;
 
 use App\Interfaces\ItemController;
-use Lib\Err;
+use App\traits\ValidateRequestData;
 use Illuminate\Database\QueryException;
 
 class EventosController extends Controller implements ItemController {
+    use ValidateRequestData;
+
+    public array $fields = [
+        'nombre' => 'string|min:3|max:50',
+        'lugar' => 'string|min:5|max:100',
+        'geo.lat' => 'numeric',
+        'geo.lon' => 'numeric',
+        'fecha.desde' => 'date',
+        'fecha.hasta' => 'date',
+        'entradas' => 'array<numeric>',
+        'data' => 'optional|json',
+    ];
+
     public function all() {
-        response()->json(Evento::all());
+        $eventos = Evento::with('entradas')->get();
+        response()->json($eventos);
     }
 
     public function get(int $id) {
-        if (!$evento = Evento::find($id)) {
+        if (!$evento = Evento::with('entradas')->find($id)) {
             response()->exit(null, 404);
         }
         response()->json($evento);
     }
 
     public function create() {
-        $eventoData = $this->getPostData(request());
+        $eventoData = $this->getItemData(request());
+        
         $evento = new Evento($eventoData);
 
         try {
             $evento->save();
+            $evento->entradas()->sync($eventoData['entradas']);
         } catch (QueryException $e) {
+            error_log("Database error: " . $e->getMessage());
             $this->handleDatabaseError($e);
-            // Si el error no fue manejado, lanzar una respuesta genérica
-            response()->exit('Database error occurred', 500);
         }
 
         response()->plain(null, 201);
     }
 
     public function put(int $id) {
-        $eventoData = $this->getPostData(request());
+        $eventoData = $this->getItemData(request());
 
         if (!$evento = Evento::find($id)) {
             response()->exit(null, 404);
@@ -46,36 +59,26 @@ class EventosController extends Controller implements ItemController {
 
         try {
             $evento->update($eventoData);
+            $evento->entradas()->sync($eventoData['entradas']);
         } catch (QueryException $e) {
+            error_log("Database error: " . $e->getMessage());
             $this->handleDatabaseError($e);
-            //
-            response()->exit('Database error occurred', 500);
         }
 
         response()->plain(null, 204);
     }
 
     public function delete(int $id) {
-    }
-
-    private function getPostData(Request $request): array {
-        // Validar los datos de la petición.
-        $data = $request->validate([
-            'nombre' => 'string|min:3|max:50',
-            'intentos' => 'numeric|min:1|max:255',
-            'precio_web' => 'numeric',
-            'precio_taquilla' => 'numeric',
-            'descripcion' => 'optional|string|min:3|max:255',
-        ]);
-
-        // Si los datos no son válidos, devolver error.
-        if (!$data) {
-            if ( app()->config('debug') == 'true' ) {
-                response()->exit(request()->errors(), 400);
-            }
-            response()->exit(Err::get('INVALID_FIELDS'), 400);
+        if (!$evento = Evento::find($id)) {
+            response()->exit(null, 404);
         }
 
-        return $data;
+        try {
+            $evento->delete();
+        } catch (QueryException $e) {
+            $this->handleDatabaseError($e);
+        }
+
+        response()->plain(null, 204);
     }
 }

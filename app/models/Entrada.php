@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
 class Entrada extends Model {
-    protected $hidden = ['created_at', 'updated_at'];
+    protected $hidden = ['created_at', 'updated_at', 'pivot'];
 
     protected $fillable = [
         'nombre',
@@ -12,4 +14,8 @@ class Entrada extends Model {
         'precio_taquilla',
         'descripcion',
     ];
+
+    public function eventos(): BelongsToMany{
+        return $this->belongsToMany(Evento::class);
+    }
 }
