@@ -7,8 +7,8 @@
         "5000-5999: Errores del servidor"
     ],
     "INVALID_FIELDS": {
-        "code": 1001,
-        "message": "Some required fields are missing or invalid"
+        "error": "invalid_fields",
+        "message": "Faltan algunos campos o son inválidos"
     },
     "USER_ALREADY_EXISTS": {
         "code": 1002,
@@ -29,5 +29,9 @@
     "ADULT_NOT_FOUND": {
         "code": 1008,
         "message": "The adult does not exist"
+    },
+    "ENTRADA_ALREADY_EXISTS": {
+        "code": 1009,
+        "message": "The entrada already exists"
     }
 }

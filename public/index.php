@@ -91,6 +91,7 @@ auth()->createRoles([
         'equipos:viewall',
         'equipos:editall',
         'equipos:delete',
+        'entradas:manague',
     ],
     'adulto' => [
         'users:editself',

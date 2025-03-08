@@ -40,12 +40,12 @@ class EquiposController extends Controller implements ItemController {
         // Verificar permisos y propiedad del equipo.
         $equipo = Equipo::find($id);
         if (empty($equipo)) {
-            response()->plain(null, 404);
+            response()->exit(null, 404);
         }
 
         // Si no es el dueño del equipo ni puede ver todos los equipos, devolver error.
         if ($equipo->adulto_id !== auth()->user()->id && !auth()->user()->can('users:viewall')) {
-            response()->plain(null, 403);
+            response()->exit(null, 403);
         }
 
         response()->json($equipo);
@@ -114,7 +114,7 @@ class EquiposController extends Controller implements ItemController {
      * @param int|null $exclude ID del equipo a excluir.
      * @return array|bool Datos del equipo o false si no son válidos.
      */
-    private function getPostData(Request $request, ?int $exclude = null): array|bool {
+    protected function getPostData(Request $request, ?int $exclude = null): array|bool {
         // Validar los datos recibidos.
         $reqBody = $request->validate([
             'titulo' => 'string|min:3|max:80',

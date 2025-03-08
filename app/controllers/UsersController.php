@@ -274,7 +274,7 @@ class UsersController extends Controller implements ItemController {
             response()->exit(Err::get('INVALID_ROLES'), 400);
         }
 
-        // Si se envía DNI, se debe recibir todos los datos de un adulto.
+        // Si se envía adulto, validar los datos.
         if ($request->get('adulto')) {
             $adulto = $request->validate([
                 'adulto.DNI' => 'string|min:7|max:15',

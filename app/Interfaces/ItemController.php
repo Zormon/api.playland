@@ -2,6 +2,8 @@
 
 namespace App\Interfaces;
 
+use Leaf\Http\Request;
+
 /**
  * Interface for controllers that handle items (CRUD operations)
  */
