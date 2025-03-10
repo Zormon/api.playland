@@ -2,141 +2,148 @@
 
 namespace App\Controllers;
 
-use Leaf\Http\Request;
-
 use App\Models\Equipo;
-use App\Models\Adulto;
+use App\traits\ValidateRequestData;
 
 use App\Interfaces\ItemController;
-use Lib\Err;
 use Lib\Cache;
+use Lib\Access;
+use Illuminate\Database\QueryException;
 
 class EquiposController extends Controller implements ItemController {
+    use ValidateRequestData;
+
+    public array $fields = [
+        'titulo' => 'string|min:3|max:80',
+        'nombre' => 'string|min:3|max:80',
+        'nacimiento' => 'date',
+        'notas' => 'optional|string',
+        'adulto_id' => 'number',
+    ];
+
     private const array CACHE_KEYS = [
         'all' => 'equipos:all/json',
+        'adulto' => 'equipos:@/json',
     ];
 
     public function all() {
-        // Si no puede ver todos los equipos
-        if (!auth()->user()->can('equipos:viewall')) {
-            response()->plain(null, 403);
+        $permission = Access::canAny(['equipos:viewall', 'equipos:viewself']);
+        $USERID = auth()->user()->id;
+
+        $cacheKey = match ($permission) {
+            'equipos:viewall' => self::CACHE_KEYS['all'],
+            'equipos:viewself' => self::aCacheKey($USERID),
+        };
+
+        // Si se solicita sin caché, borrar la caché.
+        if (request()->get('nocache')) {
+            Cache::delete($cacheKey);
         }
 
-        // Parámetros de la petición.
-        $params = new \stdClass;
-        $params->nocache = request()->get('nocache') ? true : false;
-
-        $cacheKey = self::CACHE_KEYS['all'];
-        if ($params->nocache || !$equipoList = Cache::get($cacheKey)) {
-            $equipoList = json_encode(Equipo::all());
-            Cache::set($cacheKey, $equipoList, 3600 * 24 * 30); // 30 días
+        // Si no hay caché, obtener los datos de la base de datos y guardarlos en caché.
+        if (!$json = Cache::get($cacheKey)) {
+            $json = match ($permission) {
+                'equipos:viewall' => json_encode(Equipo::all()),
+                'equipos:viewself' => json_encode(Equipo::where('adulto_id', $USERID)->get()),
+            };
+            Cache::set($cacheKey, $json, 3600 * 24 * 30); // 30 días
         }
 
         response()->withHeader('Content-Type', 'application/json');
-        response()->custom($equipoList, 200);
+        response()->custom($json, 200);
     }
 
     public function get(int $id) {
-        // Verificar permisos y propiedad del equipo.
-        $equipo = Equipo::find($id);
-        if (empty($equipo)) {
+        $permission = Access::canAny(['equipos:viewall', 'equipos:viewself']);
+
+        if (!$equipo = Equipo::find($id)) {
             response()->exit(null, 404);
         }
 
-        // Si no es el dueño del equipo ni puede ver todos los equipos, devolver error.
-        if ($equipo->adulto_id !== auth()->user()->id && !auth()->user()->can('users:viewall')) {
-            response()->exit(null, 403);
+        // Si el usuario no puede ver todos los equipos, exigir que sea el dueño del equipo.
+        if ($permission === 'equipos:viewself') {
+            $this->mustOwn($equipo);
         }
 
         response()->json($equipo);
     }
 
-    // @todo: Implementar permisos
     public function create() {
-        $equipoData = $this->getPostData(request());
+        $permission = Access::canAny(['equipos:managueall', 'equipos:managueself']);
 
-        // Crear el equipo.
-        $equipo = new Equipo($equipoData);
-        $equipo->save();
+        $requestData = $this->getItemData(request());
+        $equipo = new Equipo($requestData);
 
-        Cache::delete(self::CACHE_KEYS);
+        // Si el usuario no puede gestionar todos los equipos, exigir que sea el dueño del equipo.
+        if ($permission === 'equipos:managueself') {
+            $this->mustOwn($equipo);
+        }
+
+        try {
+            $equipo->save();
+        } catch (QueryException $e) {
+            $this->handleDatabaseError($e);
+        }
+
+        Cache::delete([self::CACHE_KEYS['all'], self::aCacheKey($equipo->adulto_id)]);
         response()->plain(null, 201);
     }
 
-    // @todo Implementar permisos
     public function put($id) {
-        // Buscar el equipo.
-        $equipo = Equipo::find($id);
+        $permission = Access::canAny(['equipos:managueall', 'equipos:managueself']);
 
-        // Comprobar que existe el equipo.
-        if (empty($equipo)) {
-            response()->plain(null, 404);
-            return;
+        $requestData = $this->getItemData(request(), true);
+
+        if (!$equipo = Equipo::find($id)) {
+            response()->exit(null, 404);
         }
 
-        $equipoData = $this->getPostData(request(), $id);
-        
-        if (!$equipoData) {
-            return;
+        // Si el usuario no puede gestionar todos los equipos, exigir que sea el dueño del equipo.
+        if ($permission === 'equipos:managueself') {
+            $this->mustOwn($equipo);
         }
 
-        // Actualizar el equipo.
-        $equipo->update($equipoData);
+        try {
+            $equipo->update($requestData);
+        } catch (QueryException $e) {
+            $this->handleDatabaseError($e);
+        }
         
-        Cache::delete(self::CACHE_KEYS);
-        response()->plain(null, 200);
+        Cache::delete(self::aCacheKey($equipo->adulto_id));
+        response()->noContent();
     }
 
+    //TODO: El adulto puede borrar sus propios equipos, siempre que no tengan participaciones o reservas.
     public function delete($id) {
-        // Comprobar permiso.
-        //TODO: El adulto puede borrar sus propios equipos, siempre que no tengan participaciones o reservas.
-        if (!auth()->user()->can('equipos:delete')) {
-            response()->plain(null, 403);
+        Access::can('equipos:managueall');
+
+        if (!$equipo = Equipo::find($id)) {
+            response()->exit(null, 404);
         }
 
-        // Comprobar que existe el equipo.
-        $equipo = Equipo::find($id);
-        if (empty($equipo)) {
-            response()->plain(null, 404);
-            return;
+        try {
+            $equipo->delete();
+        } catch (QueryException $e) {
+            $this->handleDatabaseError($e);
         }
 
-        // Eliminar el equipo.
-        $equipo->delete();
-        Cache::delete(self::CACHE_KEYS);
-        response()->plain(null, 204);
+        Cache::delete([self::CACHE_KEYS['all'], self::aCacheKey($equipo->adulto_id)]);
+        response()->noContent();
     }
 
     /**
-     * Valida y devuelve los datos de un equipo recibidos en la petición.
+     * Comprueba que el usuario es dueño del equipo, si no lo es, devuelve un error 403.
      *
-     * @param Request $request Petición HTTP.
-     * @param int|null $exclude ID del equipo a excluir.
-     * @return array|bool Datos del equipo o false si no son válidos.
+     * @param Equipo $equipo El equipo a comprobar
+     * @return void
      */
-    protected function getPostData(Request $request, ?int $exclude = null): array|bool {
-        // Validar los datos recibidos.
-        $reqBody = $request->validate([
-            'titulo' => 'string|min:3|max:80',
-            'nombre' => 'string|min:3|max:80',
-            'nacimiento' => 'date',
-            'notas' => 'optional|string',
-            'adulto_id' => 'number',
-        ]);
-
-        // Si los datos no son válidos, devolver error.
-        if (!$reqBody) {
-            if ( app()->config('debug') == 'true' ) {
-                response()->exit(request()->errors(), 400);
-            }
-            response()->exit(Err::get('INVALID_FIELDS'), 400);
+    private function mustOwn(Equipo $equipo) {
+        if ($equipo->adulto_id !== auth()->user()->id) {
+            response()->exit(null, 403);
         }
+    }
 
-        // Comprobar que el adulto existe.
-        if (!Adulto::find($reqBody['adulto_id'])) {
-            response()->exit(Err::get('ADULT_NOT_FOUND'), 404);
-        }
-
-        return $reqBody;
+    private static function aCacheKey($id) {
+        return str_replace('@', $id, self::CACHE_KEYS['adulto']);
     }
 }

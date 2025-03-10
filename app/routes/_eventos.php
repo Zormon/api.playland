@@ -1,7 +1,5 @@
 <?php
 
-use App\Middleware\Access;
-
 app()->group('evento', ['middleware' => 'auth.required', function () {
     // Get all evento
     app()->get('/', 'EventosController@all');
@@ -10,11 +8,11 @@ app()->group('evento', ['middleware' => 'auth.required', function () {
     app()->get('/(\d+)', 'EventosController@get');
 
     // Create a new evento
-    app()->post('/', ['middleware' => Access::can('eventos:manague'), 'EventosController@create']);
+    app()->post('/', 'EventosController@create');
 
     // Update an evento
-    app()->put('/(\d+)', ['middleware' => Access::can('eventos:manague'), 'EventosController@put']);
+    app()->put('/(\d+)', 'EventosController@put');
 
     // Delete an evento
-    app()->delete('/(\d+)', ['middleware' => Access::can('eventos:manague'), 'EventosController@delete']);
+    app()->delete('/(\d+)', 'EventosController@delete');
 }]);

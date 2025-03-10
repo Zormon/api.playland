@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\Evento;
+use Lib\Access;
 
 use App\Interfaces\ItemController;
 use App\traits\ValidateRequestData;
@@ -35,8 +36,9 @@ class EventosController extends Controller implements ItemController {
     }
 
     public function create() {
+        Access::can('eventos:manague');
+
         $eventoData = $this->getItemData(request());
-        
         $evento = new Evento($eventoData);
 
         try {
@@ -51,6 +53,8 @@ class EventosController extends Controller implements ItemController {
     }
 
     public function put(int $id) {
+        Access::can('eventos:manague');
+
         $eventoData = $this->getItemData(request());
 
         if (!$evento = Evento::find($id)) {
@@ -69,6 +73,8 @@ class EventosController extends Controller implements ItemController {
     }
 
     public function delete(int $id) {
+        Access::can('eventos:manague');
+
         if (!$evento = Evento::find($id)) {
             response()->exit(null, 404);
         }

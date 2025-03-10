@@ -32,8 +32,11 @@ class Cache {
         self::$redis->setex($key, $ttl, $data);
     }
     
-    public static function delete(array $keys) {
+    public static function delete(array|string $keys) {
         self::connect();
+        if (!is_array($keys)) {
+            $keys = [$keys];
+        }
         foreach ($keys as $key) {
             self::$redis->del($key);
         }

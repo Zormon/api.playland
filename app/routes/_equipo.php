@@ -2,10 +2,10 @@
 
 app()->group('equipo', ['middleware' => 'auth.required', function () {
     // Get all equipos
-    app()->get('/', 'EquiposController@all');
+    app()->get('/',  'EquiposController@all');
 
     // Get a single equipo
-    app()->get('/(\d+)', 'EquiposController@get');
+    app()->get('/(\d+)',  'EquiposController@get');
 
     // Create a new equipo
     app()->post('/', 'EquiposController@create');

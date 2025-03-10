@@ -1,37 +1,5 @@
 {
-    "__comment": [
-        "1000-1999: Errores de validación",
-        "2000-2999: Errores de autenticación y autorización",
-        "3000-3999: Errores relacionados con la base de datos",
-        "4000-4999: Errores de lógica de negocio",
-        "5000-5999: Errores del servidor"
-    ],
-    "INVALID_FIELDS": {
-        "error": "invalid_fields",
-        "message": "Faltan algunos campos o son inválidos"
-    },
-    "USER_ALREADY_EXISTS": {
-        "code": 1002,
-        "message": "The loginId already exists"
-    },
-    "INVALID_ROLES": {
-        "code": 1003,
-        "message": "The role/s are invalid"
-    },
-    "DNI_ALREADY_EXISTS": {
-        "code": 1004,
-        "message": "The dni already exists"
-    },
-    "EMAIL_ALREADY_EXISTS": {
-        "code": 1006,
-        "message": "The email already exists"
-    },
     "ADULT_NOT_FOUND": {
-        "code": 1008,
-        "message": "The adult does not exist"
-    },
-    "ENTRADA_ALREADY_EXISTS": {
-        "code": 1009,
-        "message": "The entrada already exists"
+        "error": "adult_not_found"
     }
 }

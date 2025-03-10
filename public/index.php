@@ -86,18 +86,17 @@ auth()->middleware('auth.guest',    function() { response()->plain(null, 401); }
 auth()->createRoles([
     'admin' => [
         'users:viewall',
-        'users:editall',
-        'users:delete',
+        'users:managueall',
         'equipos:viewall',
-        'equipos:editall',
-        'equipos:delete',
+        'equipos:managueall',
         'entradas:manague',
         'eventos:manague',
     ],
     'adulto' => [
-        'users:editself',
+        'users:viewself',
+        'users:managueself',
         'equipos:viewself',
-        'equipos:editself'
+        'equipos:managueself',
     ],
     'guest' => [],
 ]);
