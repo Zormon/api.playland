@@ -93,6 +93,8 @@ auth()->createRoles([
         'reservas:viewall',
         'entradas:manague',
         'eventos:manague',
+        'pruebas:view',
+        'pruebas:manague',
     ],
     'adulto' => [
         'users:viewself',
