@@ -1,5 +1,9 @@
 {
     "ADULT_NOT_FOUND": {
         "error": "adult_not_found"
+    },
+    "MISSING_EVENT_PARAM": {
+        "error": "missing_required_param",
+        "param": "event"
     }
 }

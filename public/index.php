@@ -89,6 +89,8 @@ auth()->createRoles([
         'users:managueall',
         'equipos:viewall',
         'equipos:managueall',
+        'reservas:manageall',
+        'reservas:viewall',
         'entradas:manague',
         'eventos:manague',
     ],
