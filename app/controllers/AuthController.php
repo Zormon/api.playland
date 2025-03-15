@@ -21,7 +21,6 @@ class AuthController extends Controller {
         }
 
         $authdata = auth()->data();
-        unset($authdata->roles);
         response()->json($authdata);
     }
 }

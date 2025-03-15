@@ -84,25 +84,10 @@ auth()->middleware('auth.guest',    function() { response()->plain(null, 401); }
 |--------------------------------------------------------------------------
 */
 auth()->createRoles([
-    'admin' => [
-        'users:viewall',
-        'users:managueall',
-        'equipos:viewall',
-        'equipos:managueall',
-        'reservas:manageall',
-        'reservas:viewall',
-        'entradas:manague',
-        'eventos:manague',
-        'pruebas:view',
-        'pruebas:manague',
-    ],
-    'adulto' => [
-        'users:viewself',
-        'users:managueself',
-        'equipos:viewself',
-        'equipos:managueself',
-    ],
-    'guest' => [],
+    'admin' => [],
+    'adulto' => [],
+    'taquilla' => [],
+    'monitor' => [],
 ]);
 
 
