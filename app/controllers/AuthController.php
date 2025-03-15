@@ -20,7 +20,20 @@ class AuthController extends Controller {
             return;
         }
 
-        $authdata = auth()->data();
-        response()->json($authdata);
+        $data = [
+            'loginid' => auth()->user()->loginid,
+            'role' => auth()->user()->roles()[0],
+            'accessToken' => auth()->data()->accessToken,
+        ];
+
+        response()->json($data);
+    }
+
+    public function user() {
+        $data = [
+            'loginid' => auth()->user()->loginid,
+            'role' => auth()->user()->roles()[0],
+        ];
+        response()->json($data);
     }
 }
