@@ -2,17 +2,17 @@
 
 app()->group('prueba', ['middleware' => 'auth.required', function () {
     // Get all pruebas
-    app()->get('/', 'PruebasController@all');
+    app()->get('/', ['middleware' => 'is:admin|taquilla|monitor', 'PruebasController@all']);
 
     // Get a single prueba
-    app()->get('/(\d+)', 'PruebasController@get');
+    app()->get('/(\d+)', ['middleware' => 'is:admin|taquilla|monitor', 'PruebasController@get']);
 
     // Create a new prueba
-    app()->post('/', 'PruebasController@create');
+    app()->post('/', ['middleware' => 'is:admin', 'PruebasController@create']);
 
     // Update an prueba
-    app()->put('/(\d+)', 'PruebasController@put');
+    app()->put('/(\d+)', ['middleware' => 'is:admin', 'PruebasController@put']);
 
     // Delete an prueba
-    app()->delete('/(\d+)', 'PruebasController@delete');
+    app()->delete('/(\d+)', ['middleware' => 'is:admin', 'PruebasController@delete']);
 }]);

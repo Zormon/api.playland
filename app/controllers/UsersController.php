@@ -11,7 +11,6 @@ use App\traits\ValidateRequestData;
 use App\Interfaces\ItemController;
 use Lib\Err;
 use Lib\Cache;
-use Lib\Access;
 use Illuminate\Database\QueryException;
 
 /**
@@ -56,8 +55,6 @@ class UsersController extends Controller implements ItemController {
      *
      */
     public function all() {
-        Access::can('users:viewall');
-
         // Filtro opcional por parámetro URL.
         $filter = request()->get('filter');
 
@@ -92,9 +89,7 @@ class UsersController extends Controller implements ItemController {
      * @param int $id ID del usuario a devolver.
      */
     public function get(int $id) {
-        $permission = Access::canAny(['users:viewall', 'users:viewself']);
-
-        if ($permission === 'users:viewself') {
+        if (auth()->user()->is('adulto')) {
             $this->mustbeSelf($id);
         }
 
@@ -106,8 +101,6 @@ class UsersController extends Controller implements ItemController {
     }
 
     public function create() {
-        Access::can('users:managueall');
-
         $requestData = $this->getItemData(request());
 
         // Crear el usuario.
@@ -149,8 +142,6 @@ class UsersController extends Controller implements ItemController {
      * @param int $id The ID of the user to update.
      */
     public function put($id) {
-        Access::can('users:managueall');
-
         if (!$user = User::find($id)) {
             response()->exit(null, 404);
         }
@@ -179,13 +170,11 @@ class UsersController extends Controller implements ItemController {
      * @return void
      */
     public function patch($id) {
-        $permission = Access::canAny(['users:managueall', 'users:managueself']);
-
         if (!$user = User::find($id)) {
             response()->exit(null, 404);
         }
 
-        if ($permission === 'users:managueself') {
+        if (auth()->user()->is('adulto')) {
             $this->mustbeSelf($id);
         }
 
@@ -223,8 +212,6 @@ class UsersController extends Controller implements ItemController {
     }
 
     public function delete($id) {
-        Access::can('users:managueall');
-
         if (!$user = User::find($id)) {
             response()->exit(null, 404);
         }

@@ -2,21 +2,20 @@
 
 app()->group('user', ['middleware' => 'auth.required', function () {
     // Obtener todos los usuarios
-    app()->get('/', 'UsersController@all');
+    app()->get('/', ['middleware' => 'is:admin', 'UsersController@all']);
 
     // Obtener un usuario específico
-    app()->get('/(\d+)', ['UsersController@get']);
+    app()->get('/(\d+)', ['middleware' => 'is:admin|adulto', 'UsersController@get']);
 
     // Crear usuario
-    app()->post('/', 'UsersController@create');
+    app()->post('/', ['middleware' => 'is:admin|adulto', 'UsersController@create']);
 
     // Actualizar usuario
-    app()->put('/(\d+)', 'UsersController@put');
+    app()->put('/(\d+)', ['middleware' => 'is:admin|adulto', 'UsersController@put']);
 
     // Actualizar adulto (para taquilla)
-    app()->patch('/(\d+)', 'UsersController@patch');
+    app()->patch('/(\d+)', ['middleware' => 'is:admin|adulto', 'UsersController@patch']);
 
     // Eliminar usuario
-    app()->delete('/(\d+)', 'UsersController@delete');
-    
+    app()->delete('/(\d+)', ['middleware' => 'is:admin', 'UsersController@delete']);
 }]);

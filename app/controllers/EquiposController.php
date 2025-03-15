@@ -7,7 +7,6 @@ use App\traits\ValidateRequestData;
 
 use App\Interfaces\ItemController;
 use Lib\Cache;
-use Lib\Access;
 use Illuminate\Database\QueryException;
 
 class EquiposController extends Controller implements ItemController {
@@ -27,13 +26,11 @@ class EquiposController extends Controller implements ItemController {
     ];
 
     public function all() {
-        $permission = Access::canAny(['equipos:viewall', 'equipos:viewself']);
         $USERID = auth()->user()->id;
 
-        $cacheKey = match ($permission) {
-            'equipos:viewall' => self::CACHE_KEYS['all'],
-            'equipos:viewself' => self::aCacheKey($USERID),
-        };
+        $cacheKey = auth()->user()->is('adulto') ?
+            self::aCacheKey($USERID) :
+            self::CACHE_KEYS['all'];
 
         // Si se solicita sin caché, borrar la caché.
         if (request()->get('nocache')) {
@@ -42,10 +39,9 @@ class EquiposController extends Controller implements ItemController {
 
         // Si no hay caché, obtener los datos de la base de datos y guardarlos en caché.
         if (!$json = Cache::get($cacheKey)) {
-            $json = match ($permission) {
-                'equipos:viewall' => json_encode(Equipo::all()),
-                'equipos:viewself' => json_encode(Equipo::where('adulto_id', $USERID)->get()),
-            };
+            $json = auth()->user()->is('adulto') ?
+                json_encode(Equipo::where('adulto_id', $USERID)->get()) :
+                json_encode(Equipo::all());
             Cache::set($cacheKey, $json, 3600 * 24 * 30); // 30 días
         }
 
@@ -54,14 +50,12 @@ class EquiposController extends Controller implements ItemController {
     }
 
     public function get(int $id) {
-        $permission = Access::canAny(['equipos:viewall', 'equipos:viewself']);
-
         if (!$equipo = Equipo::find($id)) {
             response()->exit(null, 404);
         }
 
         // Si el usuario no puede ver todos los equipos, exigir que sea el dueño del equipo.
-        if ($permission === 'equipos:viewself') {
+        if (auth()->user()->is('adulto')) {
             $this->mustOwn($equipo);
         }
 
@@ -69,13 +63,11 @@ class EquiposController extends Controller implements ItemController {
     }
 
     public function create() {
-        $permission = Access::canAny(['equipos:managueall', 'equipos:managueself']);
-
         $requestData = $this->getItemData(request());
         $equipo = new Equipo($requestData);
 
         // Si el usuario no puede gestionar todos los equipos, exigir que sea el dueño del equipo.
-        if ($permission === 'equipos:managueself') {
+        if (auth()->user()->is('adulto')) {
             $this->mustOwn($equipo);
         }
 
@@ -90,8 +82,6 @@ class EquiposController extends Controller implements ItemController {
     }
 
     public function put($id) {
-        $permission = Access::canAny(['equipos:managueall', 'equipos:managueself']);
-
         $requestData = $this->getItemData(request(), true);
 
         if (!$equipo = Equipo::find($id)) {
@@ -99,7 +89,7 @@ class EquiposController extends Controller implements ItemController {
         }
 
         // Si el usuario no puede gestionar todos los equipos, exigir que sea el dueño del equipo.
-        if ($permission === 'equipos:managueself') {
+        if (auth()->user()->is('adulto')) {
             $this->mustOwn($equipo);
         }
 
@@ -115,8 +105,6 @@ class EquiposController extends Controller implements ItemController {
 
     //TODO: El adulto puede borrar sus propios equipos, siempre que no tengan participaciones o reservas.
     public function delete($id) {
-        Access::can('equipos:managueall');
-
         if (!$equipo = Equipo::find($id)) {
             response()->exit(null, 404);
         }

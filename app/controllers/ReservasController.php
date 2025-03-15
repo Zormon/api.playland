@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Models\Reserva;
-use Lib\Access;
 use Lib\Err;
 use Lib\Cache;
 
@@ -28,15 +27,13 @@ class ReservasController extends Controller implements ItemController {
     ];
 
     public function all() {
-        $permission = Access::canAny(['reservas:viewall', 'reservas:viewself']);
         if (!$evid = request()->get('event')) {
             response()->exit(Err::get('MISSING_EVENT_PARAM'), 400);
         }
 
-        $cacheKey = match ($permission) {
-            'reservas:viewall' => $this->evCacheKey($evid),
-            'reservas:viewself' => $this->adCacheKey($evid, auth()->user()->id),
-        };
+        $cacheKey = auth()->user()->is('adulto') ?
+            $this->adCacheKey($evid, auth()->user()->id) :
+            $this->evCacheKey($evid);
 
         // Si se solicita sin caché, borrar la caché.
         if (request()->get('nocache')) {
@@ -44,12 +41,11 @@ class ReservasController extends Controller implements ItemController {
         }
 
         if (!$json = Cache::get($cacheKey)) {
-            $reservas = match ($permission) {
-                'reservas:viewall' => Reserva::where('evento_id', $evid)->get(),
-                'reservas:viewself' => Reserva::where('evento_id', $evid)->whereHas('equipo', function ($query) {
+            $reservas = auth()->user()->is('adulto') ?
+                Reserva::where('evento_id', $evid)->whereHas('equipo', function ($query) {
                     $query->where('adulto_id', auth()->user()->id);
-                })->get(),
-            };
+                })->get() :
+                Reserva::where('evento_id', $evid)->get();
 
             $json = json_encode($reservas);
             Cache::set($cacheKey, $json, 3600 * 24 * 30); // 30 días
@@ -60,14 +56,12 @@ class ReservasController extends Controller implements ItemController {
     }
 
     public function get(int $id) {
-        $permission = Access::canAny(['reservas:viewall', 'reservas:viewself']);
-        
         if (!$reserva = Reserva::with(['equipo', 'evento', 'entrada'])->find($id)) {
             response()->exit(null, 404);
         }
 
         // Si el usuario solo puede ver sus propias reservas, verificar que sea el dueño
-        if ($permission === 'reservas:viewself') {
+        if (auth()->user()->is('adulto')) {
             $this->mustOwnReserva($reserva);
         }
 
@@ -75,13 +69,11 @@ class ReservasController extends Controller implements ItemController {
     }
 
     public function create() {
-        $permission = Access::canAny(['reservas:manageall', 'reservas:manageself']);
-
         $reservaData = $this->getItemData(request());
         $reserva = new Reserva($reservaData);
 
         // Si el usuario solo puede gestionar sus propias reservas, verificar que sea el dueño del equipo
-        if ($permission === 'reservas:manageself') {
+        if (auth()->user()->is('adulto')) {
             $this->mustOwnEquipo($reservaData['equipo_id']);
         }
 
@@ -96,8 +88,6 @@ class ReservasController extends Controller implements ItemController {
     }
 
     public function put(int $id) {
-        $permission = Access::canAny(['reservas:manageall', 'reservas:manageself']);
-
         $reservaData = $this->getItemData(request(), true);
 
         if (!$reserva = Reserva::find($id)) {
@@ -105,9 +95,10 @@ class ReservasController extends Controller implements ItemController {
         }
 
         // Si el usuario solo puede gestionar sus propias reservas, verificar que sea el dueño
-        if ($permission === 'reservas:manageself') {
+        // <De momento solo acceden aqui los admins>
+        if (auth()->user()->is('adulto')) {
             $this->mustOwnReserva($reserva);
-            
+
             // Si está cambiando el equipo, verificar que también sea dueño del nuevo equipo
             if (isset($reservaData['equipo_id']) && $reservaData['equipo_id'] != $reserva->equipo_id) {
                 $this->mustOwnEquipo($reservaData['equipo_id']);
@@ -121,7 +112,7 @@ class ReservasController extends Controller implements ItemController {
                 response()->exit(null, 404);
             }
         }
-        
+
         try {
             $reserva->update($reservaData);
         } catch (QueryException $e) {
@@ -133,14 +124,13 @@ class ReservasController extends Controller implements ItemController {
     }
 
     public function delete(int $id) {
-        $permission = Access::canAny(['reservas:manageall', 'reservas:manageself']);
-
+        // <De momento solo acceden aqui los admins>
         if (!$reserva = Reserva::find($id)) {
             response()->exit(null, 404);
         }
 
         // Si el usuario solo puede gestionar sus propias reservas, verificar que sea el dueño
-        if ($permission === 'reservas:manageself') {
+        if (auth()->user()->is('adulto')) {
             $this->mustOwnReserva($reserva);
         }
 

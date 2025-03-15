@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Models\Prueba;
-use Lib\Access;
 use Lib\Cache;
 
 use App\Interfaces\ItemController;
@@ -25,8 +24,6 @@ class PruebasController extends Controller implements ItemController {
     ];
 
     public function all() {
-        Access::can('pruebas:view');
-        
         // If no-cache is requested, delete the cache
         if (request()->get('nocache')) {
             Cache::delete(self::CACHE_KEYS['all']);
@@ -43,7 +40,6 @@ class PruebasController extends Controller implements ItemController {
     }
 
     public function get(int $id) {
-        Access::can('pruebas:view');
         if (!$prueba = Prueba::find($id)) {
             response()->exit(null, 404);
         }
@@ -51,8 +47,6 @@ class PruebasController extends Controller implements ItemController {
     }
 
     public function create() {
-        Access::can('pruebas:manague');
-
         $requestData = $this->getItemData(request());
         $obstaculos = $requestData['obstaculos'] ?? [];
         unset($requestData['obstaculos']);
@@ -76,8 +70,6 @@ class PruebasController extends Controller implements ItemController {
     }
 
     public function put(int $id) {
-        Access::can('pruebas:manague');
-
         $requestData = $this->getItemData(request(), true);
         $obstaculos = $requestData['obstaculos'] ?? null;
         unset($requestData['obstaculos']);
@@ -106,8 +98,6 @@ class PruebasController extends Controller implements ItemController {
     }
 
     public function delete(int $id) {
-        Access::can('pruebas:manague');
-
         if (!$prueba = Prueba::find($id)) {
             response()->exit(null, 404);
         }

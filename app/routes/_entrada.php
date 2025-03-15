@@ -8,11 +8,11 @@ app()->group('entrada', ['middleware' => 'auth.required', function () {
     app()->get('/(\d+)', 'EntradasController@get');
 
     // Create a new entrada
-    app()->post('/', 'EntradasController@create');
+    app()->post('/', ['middleware' => 'is:admin', 'EntradasController@create']);
 
     // Update an entrada
-    app()->put('/(\d+)', 'EntradasController@put');
+    app()->put('/(\d+)', ['middleware' => 'is:admin', 'EntradasController@put']);
 
     // Delete an entrada
-    app()->delete('/(\d+)', 'EntradasController@delete');
+    app()->delete('/(\d+)', ['middleware' => 'is:admin', 'EntradasController@delete']);
 }]);

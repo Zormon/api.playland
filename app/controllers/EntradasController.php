@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Models\Entrada;
-use Lib\Access;
 
 use App\Interfaces\ItemController;
 use App\traits\ValidateRequestData;
@@ -32,8 +31,6 @@ class EntradasController extends Controller implements ItemController {
     }
 
     public function create() {
-        Access::can('entradas:manague');
-
         $requestData = $this->getItemData(request());
         $entrada = new Entrada($requestData);
 
@@ -47,8 +44,6 @@ class EntradasController extends Controller implements ItemController {
     }
 
     public function put(int $id) {
-        Access::can('entradas:manague');
-
         $requestData = $this->getItemData(request(), true);
 
         if (!$entrada = Entrada::find($id)) {
@@ -65,8 +60,6 @@ class EntradasController extends Controller implements ItemController {
     }
 
     public function delete(int $id) {
-        Access::can('entradas:manague');
-
         if (!$entrada = Entrada::find($id)) {
             response()->exit(null, 404);
         }

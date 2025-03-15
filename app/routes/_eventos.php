@@ -1,18 +1,18 @@
 <?php
 
 app()->group('evento', ['middleware' => 'auth.required', function () {
-    // Get all evento
-    app()->get('/', 'EventosController@all');
+    // Get all eventos
+    app()->get('/', ['middleware' => 'is:admin|taquilla|adulto', 'EventosController@all']);
 
     // Get a single evento
-    app()->get('/(\d+)', 'EventosController@get');
+    app()->get('/(\d+)', ['middleware' => 'is:admin|taquilla|adulto', 'EventosController@get']);
 
     // Create a new evento
-    app()->post('/', 'EventosController@create');
+    app()->post('/', ['middleware' => 'is:admin', 'EventosController@create']);
 
     // Update an evento
-    app()->put('/(\d+)', 'EventosController@put');
+    app()->put('/(\d+)', ['middleware' => 'is:admin', 'EventosController@put']);
 
     // Delete an evento
-    app()->delete('/(\d+)', 'EventosController@delete');
+    app()->delete('/(\d+)', ['middleware' => 'is:admin', 'EventosController@delete']);
 }]);

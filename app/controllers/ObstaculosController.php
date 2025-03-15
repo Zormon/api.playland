@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Models\Obstaculo;
-use Lib\Access;
 
 use App\Interfaces\ItemController;
 use App\traits\ValidateRequestData;
@@ -18,12 +17,10 @@ class ObstaculosController extends Controller implements ItemController {
     ];
 
     public function all() {
-        Access::can('pruebas:view');
         response()->json(Obstaculo::all());
     }
 
     public function get(int $id) {
-        Access::can('pruebas:view');
         if (!$obstaculo = Obstaculo::find($id)) {
             response()->exit(null, 404);
         }
@@ -31,8 +28,6 @@ class ObstaculosController extends Controller implements ItemController {
     }
 
     public function create() {
-        Access::can('pruebas:manague');
-
         $requestData = $this->getItemData(request());
         $obstaculo = new Obstaculo($requestData);
 
@@ -46,8 +41,6 @@ class ObstaculosController extends Controller implements ItemController {
     }
 
     public function put(int $id) {
-        Access::can('pruebas:manague');
-
         $requestData = $this->getItemData(request(), true);
 
         if (!$obstaculo = Obstaculo::find($id)) {
@@ -64,8 +57,6 @@ class ObstaculosController extends Controller implements ItemController {
     }
 
     public function delete(int $id) {
-        Access::can('pruebas:manague');
-
         if (!$obstaculo = Obstaculo::find($id)) {
             response()->exit(null, 404);
         }

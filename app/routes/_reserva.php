@@ -8,11 +8,11 @@ app()->group('reserva', ['middleware' => 'auth.required', function () {
     app()->get('/(\d+)', 'ReservasController@get');
 
     // Create a new reserva
-    app()->post('/', 'ReservasController@create');
+    app()->post('/', ['middleware' => 'is:admin|taquilla|adulto', 'ReservasController@create']);
 
     // Update an reserva
-    app()->put('/(\d+)', 'ReservasController@put');
+    app()->put('/(\d+)', ['middleware' => 'is:admin|taquilla', 'ReservasController@put']);
 
     // Delete an reserva
-    app()->delete('/(\d+)', 'ReservasController@delete');
+    app()->delete('/(\d+)', ['middleware' => 'is:admin', 'ReservasController@delete']);
 }]);
