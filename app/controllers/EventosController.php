@@ -18,12 +18,19 @@ class EventosController extends Controller implements ItemController {
         'geo.lon' => 'numeric',
         'fecha.desde' => 'date',
         'fecha.hasta' => 'date',
-        'entradas' => 'array<numeric>',
+        'entradas_ids' => 'array<numeric>',
         'data' => 'optional|json',
     ];
 
     public function all() {
         $eventos = Evento::with('entradas')->get();
+        $now = date('Y-m-d H:i:s');
+        foreach ($eventos as $evento) {
+            if ($evento->fechaDesde <= $now && $evento->fechaHasta >= $now) {
+                $evento->current = true;
+                break;
+            }
+        }
         response()->json($eventos);
     }
 
@@ -40,7 +47,7 @@ class EventosController extends Controller implements ItemController {
 
         try {
             $evento->save();
-            $evento->entradas()->sync($eventoData['entradas']);
+            $evento->entradas()->sync($eventoData['entradas_ids']);
         } catch (QueryException $e) {
             error_log("Database error: " . $e->getMessage());
             $this->handleDatabaseError($e);
@@ -58,7 +65,7 @@ class EventosController extends Controller implements ItemController {
 
         try {
             $evento->update($eventoData);
-            $evento->entradas()->sync($eventoData['entradas']);
+            $evento->entradas()->sync($eventoData['entradas_ids']);
         } catch (QueryException $e) {
             error_log("Database error: " . $e->getMessage());
             $this->handleDatabaseError($e);
@@ -79,5 +86,17 @@ class EventosController extends Controller implements ItemController {
         }
 
         response()->plain(null, 204);
+    }
+
+    /**
+     * Get the current ongoing event, if any
+     */
+    public function current() {
+        $now = date('Y-m-d H:i:s');
+        $evento = Evento::where('fechaDesde', '<=', $now)
+            ->where('fechaHasta', '>=', $now)
+            ->first();
+
+        response()->json($evento);
     }
 }

@@ -61,4 +61,9 @@ class Evento extends Model {
 
         parent::save($options);
     }
+
+    public function isCurrent(): bool {
+        $now = time();
+        return $this->fechaDesde <= $now && $this->fechaHasta >= $now;
+    }
 }

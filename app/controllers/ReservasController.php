@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\Reserva;
+use App\Models\Evento;
 use Lib\Err;
 use Lib\Cache;
 
@@ -69,6 +70,7 @@ class ReservasController extends Controller implements ItemController {
     }
 
     public function create() {
+        // @TODO:  La taquilla solo puede crear reservas del evento actual
         $reservaData = $this->getItemData(request());
         $reserva = new Reserva($reservaData);
 
@@ -94,6 +96,11 @@ class ReservasController extends Controller implements ItemController {
             response()->exit(null, 404);
         }
 
+        $evento = Evento::find($reserva->evento_id);
+        if (!$evento ) {
+            response()->exit(Err::get('EVENT_NOT_FOUND'), 404);
+        }
+
         // Si el usuario solo puede gestionar sus propias reservas, verificar que sea el dueño
         // <De momento solo acceden aqui los admins>
         if (auth()->user()->is('adulto')) {
@@ -103,6 +110,11 @@ class ReservasController extends Controller implements ItemController {
             if (isset($reservaData['equipo_id']) && $reservaData['equipo_id'] != $reserva->equipo_id) {
                 $this->mustOwnEquipo($reservaData['equipo_id']);
             }
+        }
+
+        // La taquilla solo puede editar reservas del evento actual
+        if (auth()->user()->is('taquilla') && !$evento->isCurrent()) {
+            response()->exit(Err::get('EVENT_NOT_CURRENT'), 403);
         }
 
         // Make sure we're working with a Reserva model instance

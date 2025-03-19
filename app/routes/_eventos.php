@@ -15,4 +15,7 @@ app()->group('evento', ['middleware' => 'auth.required', function () {
 
     // Delete an evento
     app()->delete('/(\d+)', ['middleware' => 'is:admin', 'EventosController@delete']);
+
+    // Get the current ongoing event, if any
+    app()->get('/current', ['middleware' => 'is:admin|taquilla|monitor', 'EventosController@current']);
 }]);
