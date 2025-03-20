@@ -5,9 +5,9 @@
 | Set up 404 handler
 |--------------------------------------------------------------------------
 |
-| Leaf provides a default 404 page, but you can also create your
-| own 404 handler by calling app()->set404(). Whatever function
-| you set will be called when a 404 error is encountered
+| Leaf provides a default 404 page, but you can create your own
+| 404 handler by uncommenting the code below. The function
+| you set here will be called when a 404 error is encountered
 |
 */
 app()->set404(function () {
@@ -19,9 +19,9 @@ app()->set404(function () {
 | Set up 500 handler
 |--------------------------------------------------------------------------
 |
-| Leaf provides a default 500 page, but you can create your own error
-| 500 handler by calling the setErrorHandler() method. The function
-| you set will be called when a 500 error is encountered
+| Leaf provides a default 500 page, but you can create your own
+| 500 handler by uncommenting the code below. The function
+| you set here will be called when a 500 error is encountered
 |
 */
 app()->setErrorHandler(function () {
@@ -30,14 +30,14 @@ app()->setErrorHandler(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Set up Controller namespace
+| Set middleware for all routes
 |--------------------------------------------------------------------------
 |
-| This allows you to directly use controller names instead of typing
-| the controller namespace first.
+| You can use app()->use() to load middleware for all
+| routes in your application.
 |
 */
-app()->setNamespace('\App\Controllers');
+// app()->use(ExampleMiddleware::class);
 
 /*
 |--------------------------------------------------------------------------

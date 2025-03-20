@@ -58,20 +58,6 @@ if (php_sapi_name() === 'cli-server') {
 
 /*
 |--------------------------------------------------------------------------
-| Load Leaf configuration
-|--------------------------------------------------------------------------
-|
-| Leaf MVC allows you to customize Leaf and it's modules using
-| configuration files defined in the config folder. This line
-| loads the configuration files and makes them available to
-| your application.
-|
-*/
-Leaf\Core::loadApplicationConfig();
-
-
-/*
-|--------------------------------------------------------------------------
 | Auth middlewares custom responses
 |--------------------------------------------------------------------------
 */
@@ -91,9 +77,6 @@ auth()->createRoles([
 ]);
 
 
-// Iniciar singleton a la base de datos
-// \Leaf\Database::initDb();
-
 if (env("APP_SLOW")) {
     $secs = rand(5, 40) / 10;
     usleep(1000*1000*$secs);
@@ -108,4 +91,3 @@ if (env("APP_SLOW")) {
 |
 */
 \Leaf\Core::runApplication();
-

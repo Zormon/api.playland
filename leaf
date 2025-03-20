@@ -3,6 +3,17 @@
 
 /*
 |--------------------------------------------------------------------------
+| Switch to root path
+|--------------------------------------------------------------------------
+|
+| Point to the application root directory so leaf can accurately
+| resolve app paths.
+|
+*/
+chdir(__DIR__);
+
+/*
+|--------------------------------------------------------------------------
 | Register The Auto Loader
 |--------------------------------------------------------------------------
 |
@@ -30,13 +41,12 @@ try {
 
 /*
 |--------------------------------------------------------------------------
-| Load Leaf configuration
+| Boot Aloe Console
 |--------------------------------------------------------------------------
 |
-| Leaf MVC allows you to customize Leaf and it's modules using
-| configuration files defined in the config folder. This line
-| loads the configuration files and makes them available to
-| your application.
+| Automatically load your config, paths and commands,
+| and then run the console application.
 |
 */
+Leaf\Core::mode('api');
 Leaf\Core::loadConsole();
