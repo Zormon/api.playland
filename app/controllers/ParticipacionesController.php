@@ -71,20 +71,22 @@ class ParticipacionesController extends Controller implements ItemController {
     }
 
     public function put(int $id) {
-        $requestData = $this->getItemData(request(), true, [
-            'resultado' => 'number',
-            'data' => 'optional|array',
-        ]);
+        $requestData = $this->getItemData(request(), true);
 
         if (!$participacion = Participacion::find($id)) {
             response()->exit(null, 404);
         }
 
         try {
+            $oldEventId = $participacion->evento_id;
             $participacion->update($requestData);
 
             // Clear the cache after updating a participacion
             Cache::delete($this->evCacheKey($participacion->evento_id));
+            // If the event ID has changed, clear the old cache as well
+            if ($oldEventId !== $participacion->evento_id) {
+                Cache::delete($this->evCacheKey($oldEventId));
+            }
         } catch (QueryException $e) {
             $this->handleDatabaseError($e);
         }
