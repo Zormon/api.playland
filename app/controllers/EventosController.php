@@ -24,13 +24,6 @@ class EventosController extends Controller implements ItemController {
 
     public function all() {
         $eventos = Evento::with('entradas')->get();
-        $now = date('Y-m-d H:i:s');
-        foreach ($eventos as $evento) {
-            if ($evento->fechaDesde <= $now && $evento->fechaHasta >= $now) {
-                $evento->current = true;
-                break;
-            }
-        }
         response()->json($eventos);
     }
 

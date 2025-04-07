@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Evento extends Model {
     protected $hidden = ['created_at', 'updated_at', 'fechaDesde', 'fechaHasta', 'entradas'];
 
-    protected $appends = ['fecha', 'entradas_ids'];
+    protected $appends = ['fecha', 'entradas_ids', 'current'];
 
     protected $fillable = [
         'nombre',
@@ -51,6 +51,10 @@ class Evento extends Model {
         return $this->entradas->pluck('id')->toArray();
     }
 
+    public function getCurrentAttribute(): bool {
+        return $this->isCurrent();
+    }
+
     // No he podido hacer esto con un mutator, de momento funciona así
     public function save(array $options = []) {
         if (isset($this->attributes['fecha'])) {
@@ -64,6 +68,8 @@ class Evento extends Model {
 
     public function isCurrent(): bool {
         $now = time();
-        return $this->fechaDesde <= $now && $this->fechaHasta >= $now;
+        $desde = strtotime($this->fechaDesde);
+        $hasta = strtotime($this->fechaHasta);
+        return $desde <= $now && $hasta >= $now;
     }
 }
