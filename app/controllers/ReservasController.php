@@ -81,6 +81,7 @@ class ReservasController extends Controller implements ItemController {
 
         try {
             $reserva->save();
+            Cache::delete($this->evCacheKey($reserva->evento_id));
         } catch (QueryException $e) {
             error_log("Database error: " . $e->getMessage());
             $this->handleDatabaseError($e);
@@ -117,16 +118,10 @@ class ReservasController extends Controller implements ItemController {
             response()->exit(Err::get('EVENT_NOT_CURRENT'), 403);
         }
 
-        // Make sure we're working with a Reserva model instance
-        if (!$reserva instanceof Reserva) {
-            $reserva = Reserva::find($id);
-            if (!$reserva) {
-                response()->exit(null, 404);
-            }
-        }
-
         try {
             $reserva->update($reservaData);
+
+            Cache::delete($this->evCacheKey($reserva->evento_id));
         } catch (QueryException $e) {
             error_log("Database error: " . $e->getMessage());
             $this->handleDatabaseError($e);
@@ -148,6 +143,8 @@ class ReservasController extends Controller implements ItemController {
 
         try {
             $reserva->delete();
+
+            Cache::delete($this->evCacheKey($reserva->evento_id));
         } catch (QueryException $e) {
             $this->handleDatabaseError($e);
         }
@@ -158,10 +155,10 @@ class ReservasController extends Controller implements ItemController {
     /**
      * Comprueba que el usuario es dueño de la reserva a través del equipo, si no lo es, devuelve un error 403.
      *
-     * @param Reserva $reserva La reserva a comprobar
+     * @param mixed $reserva La reserva a comprobar
      * @return void
      */
-    private function mustOwnReserva(Reserva|\stdClass $reserva) {
+    private function mustOwnReserva(mixed $reserva) {
         $userId = auth()->user()->id;
         $equipo = $reserva->equipo;
 
