@@ -13,7 +13,6 @@ class Evento extends Model {
     protected $fillable = [
         'nombre',
         'lugar',
-        'geo',
         'fecha', // virtual attribute
         'fechaDesde',
         'fechaHasta',
@@ -22,22 +21,6 @@ class Evento extends Model {
 
     public function entradas(): BelongsToMany {
         return $this->belongsToMany(Entrada::class);
-    }
-
-    protected function geo(): Attribute {
-        return new Attribute(function ($value) {
-            if ($value === null) {
-                return null;
-            }
-            $coords = explode(',', $value);
-            return [
-                'lat' => $coords[0],
-                'lon' => $coords[1],
-            ];
-        }, function ($value) {
-            return $value === null ? null : $value['lat'] . ',' . $value['lon'];
-
-        });
     }
 
     protected function getFechaAttribute(): array {

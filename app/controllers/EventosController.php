@@ -14,10 +14,7 @@ class EventosController extends Controller implements ItemController {
     public array $fields = [
         'nombre' => 'string|min:3|max:50',
         'lugar' => 'string|min:5|max:100',
-        'geo.lat' => 'numeric',
-        'geo.lon' => 'numeric',
-        'fecha.desde' => 'date',
-        'fecha.hasta' => 'date',
+        'fecha' => 'array<date>',
         'entradas_ids' => 'array<numeric>',
         'data' => 'optional|json',
     ];
