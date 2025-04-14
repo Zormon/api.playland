@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\Evento;
+use Lib\Err;
 
 use App\Interfaces\ItemController;
 use App\traits\ValidateRequestData;
@@ -33,6 +34,21 @@ class EventosController extends Controller implements ItemController {
 
     public function create() {
         $eventoData = $this->getItemData(request());
+
+        // Validar que las fechas de inicio y fin estén presentes
+        if (sizeof($eventoData['fecha']) != 2) {
+            response()->exit(Err::get('INVALID_FIELDS'), 400);
+        }
+        // La fecha de inicio no puede ser mayor que la fecha de fin
+        if ($eventoData['fecha'][0] > $eventoData['fecha'][1]) {
+            response()->exit(Err::get('INVALID_DATE_RANGE'), 400);
+        }
+
+        // Verificar superposición de fechas
+        if (Evento::checkDateOverlap($eventoData['fecha'][0], $eventoData['fecha'][1])) {
+            response()->exit(Err::get('EVENT_DATE_OVERLAP'), 422);
+        }
+
         $evento = new Evento($eventoData);
 
         try {
@@ -51,6 +67,20 @@ class EventosController extends Controller implements ItemController {
 
         if (!$evento = Evento::find($id)) {
             response()->exit(null, 404);
+        }
+
+        // Validar que las fechas de inicio y fin estén presentes
+        if (sizeof($eventoData['fecha']) != 2) {
+            response()->exit(Err::get('INVALID_FIELDS'), 400);
+        }
+        // La fecha de inicio no puede ser mayor que la fecha de fin
+        if ($eventoData['fecha'][0] > $eventoData['fecha'][1]) {
+            response()->exit(Err::get('INVALID_DATE_RANGE'), 400);
+        }
+
+        // Verificar superposición de fechas
+        if (Evento::checkDateOverlap($eventoData['fecha'][0], $eventoData['fecha'][1], $id)) {
+            response()->exit(Err::get('EVENT_DATE_OVERLAP'), 422);
         }
 
         try {

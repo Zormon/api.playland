@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Evento extends Model {
@@ -33,6 +32,36 @@ class Evento extends Model {
 
     public function getCurrentAttribute(): bool {
         return $this->isCurrent();
+    }
+
+    /**
+     * Verifica si hay eventos superpuestos en las fechas dadas
+     *
+     * @param string $fechaDesde Fecha de inicio del evento
+     * @param string $fechaHasta Fecha de finalización del evento
+     * @param int|null $exceptId ID del evento actual a excluir de la verificación (útil para actualizaciones)
+     * @return bool true si hay superposición, false si no hay
+     */
+    public static function checkDateOverlap(string $fechaDesde, string $fechaHasta, ?int $exceptId = null): bool {
+        $query = self::where(function($q) use ($fechaDesde, $fechaHasta) {
+            // Casos de superposición:
+            // 1. El inicio del nuevo evento está dentro del rango de otro evento
+            $q->where('fechaDesde', '<=', $fechaDesde)
+              ->where('fechaHasta', '>=', $fechaDesde);
+            // 2. El final del nuevo evento está dentro del rango de otro evento
+            $q->orWhere('fechaDesde', '<=', $fechaHasta)
+              ->where('fechaHasta', '>=', $fechaHasta);
+            // 3. El nuevo evento engloba completamente a otro evento
+            $q->orWhere('fechaDesde', '>=', $fechaDesde)
+              ->where('fechaHasta', '<=', $fechaHasta);
+        });
+
+        // Si estamos actualizando un evento, excluirlo de la comprobación
+        if ($exceptId !== null) {
+            $query->where('id', '!=', $exceptId);
+        }
+
+        return $query->exists();
     }
 
     // No he podido hacer esto con un mutator, de momento funciona así

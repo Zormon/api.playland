@@ -1,4 +1,8 @@
 {
+    "INVALID_FIELDS": {
+        "error": "invalid_fields",
+        "message": "Faltan campos requeridos o son inválidos."
+    },
     "ADULT_NOT_FOUND": {
         "error": "adult_not_found"
     },
@@ -8,5 +12,15 @@
     "MISSING_EVENT_PARAM": {
         "error": "missing_required_param",
         "param": "event"
+    },
+    "EVENT_DATE_OVERLAP": {
+        "error": "event_date_overlap",
+        "param": "fecha",
+        "message": "Ya existe un evento en esa fecha."
+    },
+    "INVALID_DATE_RANGE": {
+        "error": "invalid_date_range",
+        "param": "fecha",
+        "message": "La fecha de inicio no puede ser mayor a la fecha de fin."
     }
 }
