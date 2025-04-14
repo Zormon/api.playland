@@ -97,7 +97,7 @@ class ReservasController extends Controller implements ItemController {
             response()->exit(null, 404);
         }
 
-        $evento = Evento::find($reserva->evento_id);
+        $evento = Evento::find($reservaData);
         if (!$evento ) {
             response()->exit(Err::get('EVENT_NOT_FOUND'), 404);
         }
@@ -119,8 +119,11 @@ class ReservasController extends Controller implements ItemController {
         }
 
         try {
+            // Si el evento ha cambiado, borrar la caché del evento anterior
+            if ($reserva->evento_id != $reservaData['evento_id']) {
+                Cache::delete($this->evCacheKey($reserva->evento_id));
+            }
             $reserva->update($reservaData);
-
             Cache::delete($this->evCacheKey($reserva->evento_id));
         } catch (QueryException $e) {
             error_log("Database error: " . $e->getMessage());
