@@ -13,7 +13,7 @@ class EventosController extends Controller implements ItemController {
 
     public array $fields = [
         'nombre' => 'string|min:3|max:50',
-        'lugar' => 'string|min:5|max:100',
+        'lugar' => 'optional|string|min:5|max:100',
         'fecha' => 'array<date>',
         'entradas_ids' => 'array<numeric>',
         'data' => 'optional|json',
