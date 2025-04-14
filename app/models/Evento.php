@@ -24,10 +24,7 @@ class Evento extends Model {
     }
 
     protected function getFechaAttribute(): array {
-        return [
-            'desde' => $this->fechaDesde,
-            'hasta' => $this->fechaHasta,
-        ];
+        return [$this->fechaDesde, $this->fechaHasta];
     }
 
     public function getEntradasIdsAttribute(): array {
@@ -41,8 +38,8 @@ class Evento extends Model {
     // No he podido hacer esto con un mutator, de momento funciona así
     public function save(array $options = []) {
         if (isset($this->attributes['fecha'])) {
-            $this->attributes['fechaDesde'] = $this->attributes['fecha']['desde'] ?? null;
-            $this->attributes['fechaHasta'] = $this->attributes['fecha']['hasta'] ?? null;
+            $this->attributes['fechaDesde'] = $this->attributes['fecha'][0] ?? null;
+            $this->attributes['fechaHasta'] = $this->attributes['fecha'][1] ?? null;
             unset($this->attributes['fecha']);
         }
 
@@ -54,5 +51,9 @@ class Evento extends Model {
         $desde = strtotime($this->fechaDesde);
         $hasta = strtotime($this->fechaHasta);
         return $desde <= $now && $hasta >= $now;
+    }
+
+    public function getDurationAttribute(): int {
+        return (strtotime($this->fechaHasta) - strtotime($this->fechaDesde)) / 86400;
     }
 }
