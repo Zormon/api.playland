@@ -13,9 +13,9 @@ class EntradasController extends Controller implements ItemController {
 
     public array $fields = [
         'nombre' => 'string|min:3|max:50',
-        'intentos' => 'numeric|min:1|max:255',
-        'precio_web' => 'numeric',
-        'precio_taquilla' => 'numeric',
+        'intentos' => 'optional|numeric|min:1|max:255',
+        'precio_web' => 'optional|numeric',
+        'precio_taquilla' => 'optional|numeric',
         'descripcion' => 'optional|string|min:3|max:255',
     ];
 
