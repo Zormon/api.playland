@@ -21,7 +21,7 @@ class PruebasController extends Controller implements ItemController {
         'tipo' => 'in:[puntos,aguante,velocidad,race]',
         'nombre' => 'string|min:3|max:50',
         'info' => 'optional|string',
-        'obstaculos' => 'optional|array',
+        'obstaculos_ids' => 'optional|array',
     ];
 
     public function all() {
@@ -49,8 +49,8 @@ class PruebasController extends Controller implements ItemController {
 
     public function create() {
         $requestData = $this->getItemData(request());
-        $obstaculos = $requestData['obstaculos'] ?? [];
-        unset($requestData['obstaculos']);
+        $obstaculos = $requestData['obstaculos_ids'] ?? [];
+        unset($requestData['obstaculos_ids']);
 
         // No permitir obstaculos si el tipo no es 'race'
         if ($requestData['tipo'] !== 'race' && !empty($obstaculos)) {
@@ -77,8 +77,8 @@ class PruebasController extends Controller implements ItemController {
 
     public function put(int $id) {
         $requestData = $this->getItemData(request(), true);
-        $obstaculos = $requestData['obstaculos'] ?? null;
-        unset($requestData['obstaculos']);
+        $obstaculos = $requestData['obstaculos_ids'] ?? null;
+        unset($requestData['obstaculos_ids']);
 
         if (!$prueba = Prueba::find($id)) {
             response()->exit(null, 404);
