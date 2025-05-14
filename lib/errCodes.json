@@ -22,5 +22,10 @@
         "error": "invalid_date_range",
         "param": "fecha",
         "message": "La fecha de inicio no puede ser mayor a la fecha de fin."
+    },
+    "OBSTACLES_NOT_ALLOWED": {
+        "error": "obstacles_not_allowed",
+        "param": "obstaculos",
+        "message": "No se pueden agregar obstáculos a este evento."
     }
 }

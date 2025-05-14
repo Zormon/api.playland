@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Models\Prueba;
 use Lib\Cache;
+use Lib\Err;
 
 use App\Interfaces\ItemController;
 use App\traits\ValidateRequestData;
@@ -50,7 +51,12 @@ class PruebasController extends Controller implements ItemController {
         $requestData = $this->getItemData(request());
         $obstaculos = $requestData['obstaculos'] ?? [];
         unset($requestData['obstaculos']);
-        
+
+        // No permitir obstaculos si el tipo no es 'race'
+        if ($requestData['tipo'] !== 'race' && !empty($obstaculos)) {
+            response()->exit(Err::get('OBSTACLES_NOT_ALLOWED'), 400);
+        }
+
         $prueba = new Prueba($requestData);
 
         try {
@@ -59,7 +65,7 @@ class PruebasController extends Controller implements ItemController {
             if (!empty($obstaculos) && $prueba->tipo === 'race') {
                 $prueba->obstaculos()->sync($obstaculos);
             }
-            
+
             // Clear the cache after creating a new prueba
             Cache::delete(self::CACHE_KEYS);
         } catch (QueryException $e) {
@@ -78,6 +84,11 @@ class PruebasController extends Controller implements ItemController {
             response()->exit(null, 404);
         }
 
+        // No permitir obstaculos si el tipo no es 'race'
+        if ($requestData['tipo'] !== 'race' && !empty($obstaculos)) {
+            response()->exit(Err::get('OBSTACLES_NOT_ALLOWED'), 400);
+        }
+
         try {
             $prueba->update($requestData);
             if (!empty($obstaculos) && $prueba->tipo === 'race') {
@@ -87,7 +98,7 @@ class PruebasController extends Controller implements ItemController {
                 // If the type is changed from 'race' to something else, remove all obstacles
                 $prueba->obstaculos()->sync([]);
             }
-            
+
             // Clear the cache after updating a prueba
             Cache::delete(self::CACHE_KEYS);
         } catch (QueryException $e) {
@@ -104,7 +115,7 @@ class PruebasController extends Controller implements ItemController {
 
         try {
             $prueba->delete();
-            
+
             // Clear the cache after deleting a prueba
             Cache::delete(self::CACHE_KEYS);
         } catch (QueryException $e) {
