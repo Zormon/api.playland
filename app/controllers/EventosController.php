@@ -3,6 +3,8 @@
 namespace App\Controllers;
 
 use App\Models\Evento;
+use App\Models\Reserva;
+use App\Models\Participacion;
 use Lib\Err;
 
 use App\Interfaces\ItemController;
@@ -106,6 +108,59 @@ class EventosController extends Controller implements ItemController {
         }
 
         response()->plain(null, 204);
+    }
+
+    /**
+     * Get summary statistics for a specific event
+     * 
+     * @param int $id The event ID
+     */
+    public function summary(int $id) {
+        // Check if the event exists
+        if (!$evento = Evento::find($id)) {
+            response()->exit(null, 404);
+        }
+
+        // Get reservations by entry type
+        $reservasPorEntrada = Reserva::where('evento_id', $id)
+            ->selectRaw('entrada_id, count(*) as total')
+            ->groupBy('entrada_id')
+            ->with('entrada:id,nombre')
+            ->get()
+            ->map(fn($item) => [
+                    'nombre' => $item->entrada->nombre,
+                    'cantidad' => $item->total
+                ]
+            );
+
+        // Get participations by test
+        $participacionesPorPrueba = Participacion::where('evento_id', $id)
+            ->selectRaw('prueba_id, count(*) as total')
+            ->groupBy('prueba_id')
+            ->with('prueba:id,nombre')
+            ->get()
+            ->map(fn($item) => [
+                    'nombre' => $item->prueba->nombre,
+                    'cantidad' => $item->total
+                ]
+            );
+
+        // Prepare the response
+        $summary = [
+            'evento_id' => $id,
+            'nombre' => $evento->nombre,
+            'reservas' => [
+                'total' => $reservasPorEntrada->sum('cantidad'),
+                'grupos' => $reservasPorEntrada,
+            ],
+            'participaciones' => [
+                'total' => $participacionesPorPrueba->sum('cantidad'),
+                'grupos' => $participacionesPorPrueba,
+            ],
+            'ranking' => [],
+        ];
+
+        response()->json($summary);
     }
 
     /**
