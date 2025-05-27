@@ -10,6 +10,9 @@ app()->group('evento', ['middleware' => 'auth.required', function () {
     // Summary of a single evento
     app()->get('/(\d+)/summary', ['middleware' => 'is:admin|taquilla', 'EventosController@summary']);
 
+    // Data for monitor app of a single evento
+    app()->get('/(\d+)/monitor', ['middleware' => 'is:admin|taquilla|monitor', 'EventosController@monitor']);
+
     // Create a new evento
     app()->post('/', ['middleware' => 'is:admin', 'EventosController@create']);
 

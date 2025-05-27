@@ -19,16 +19,17 @@ class EventosController extends Controller implements ItemController {
         'lugar' => 'optional|string|min:5|max:100',
         'fecha' => 'array<date>',
         'entradas_ids' => 'array<numeric>',
+        'pruebas_ids' => 'array<numeric>',
         'data' => 'optional|json',
     ];
 
     public function all() {
-        $eventos = Evento::with('entradas')->get();
+        $eventos = Evento::with(['entradas', 'pruebas'])->get();
         response()->json($eventos);
     }
 
     public function get(int $id) {
-        if (!$evento = Evento::with('entradas')->find($id)) {
+        if (!$evento = Evento::with(['entradas', 'pruebas'])->find($id)) {
             response()->exit(null, 404);
         }
         response()->json($evento);
@@ -56,6 +57,7 @@ class EventosController extends Controller implements ItemController {
         try {
             $evento->save();
             $evento->entradas()->sync($eventoData['entradas_ids']);
+            $evento->pruebas()->sync($eventoData['pruebas_ids']);
         } catch (QueryException $e) {
             error_log("Database error: " . $e->getMessage());
             $this->handleDatabaseError($e);
@@ -88,6 +90,7 @@ class EventosController extends Controller implements ItemController {
         try {
             $evento->update($eventoData);
             $evento->entradas()->sync($eventoData['entradas_ids']);
+            $evento->pruebas()->sync($eventoData['pruebas_ids']);
         } catch (QueryException $e) {
             error_log("Database error: " . $e->getMessage());
             $this->handleDatabaseError($e);
@@ -128,9 +131,9 @@ class EventosController extends Controller implements ItemController {
             ->with('entrada:id,nombre')
             ->get()
             ->map(fn($item) => [
-                    'nombre' => $item->entrada->nombre,
-                    'cantidad' => $item->total
-                ]
+                'nombre' => $item->entrada->nombre,
+                'cantidad' => $item->total
+            ]
             );
 
         // Get participations by test
@@ -140,9 +143,9 @@ class EventosController extends Controller implements ItemController {
             ->with('prueba:id,nombre')
             ->get()
             ->map(fn($item) => [
-                    'nombre' => $item->prueba->nombre,
-                    'cantidad' => $item->total
-                ]
+                'nombre' => $item->prueba->nombre,
+                'cantidad' => $item->total
+            ]
             );
 
         // Prepare the response
@@ -167,11 +170,7 @@ class EventosController extends Controller implements ItemController {
      * Get the current ongoing event, if any
      */
     public function current() {
-        $now = date('Y-m-d H:i:s');
-        $evento = Evento::where('fechaDesde', '<=', $now)
-            ->where('fechaHasta', '>=', $now)
-            ->first();
-
+        $evento = Evento::getCurrent();
         response()->json($evento);
     }
 }
