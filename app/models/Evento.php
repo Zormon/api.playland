@@ -91,13 +91,37 @@ class Evento extends Model {
     }
 
     /**
-     * Obtiene el evento actual (si existe)
+     * Scope para eventos actuales
      */
-    public static function getCurrent(): ?self {
+    public function scopeCurrent($query) {
         $now = date('Y-m-d H:i:s');
-        return self::where('fechaDesde', '<=', $now)
-            ->where('fechaHasta', '>=', $now)
-            ->first();
+        return $query->where('fechaDesde', '<=', $now)
+            ->where('fechaHasta', '>=', $now);
+    }
+
+    /**
+     * Ajusta los atributos hidden y appends según las relaciones cargadas
+     */
+    public function appendsFullRelations(array $relations): void {
+        $hidden = $this->hidden;
+        $appends = $this->appends;
+
+        foreach ($relations as $relation) {
+            $hidden = array_filter($hidden, fn($item) => $item !== $relation);
+            $appends = array_filter($appends, fn($item) => $item !== "{$relation}_ids");
+        }
+
+        $this->hidden = $hidden;
+        $this->appends = $appends;
+
+        // Para pruebas con obstáculos cargados, ajustar también sus atributos
+        if (in_array('pruebas', $relations) && $this->relationLoaded('pruebas')) {
+            foreach ($this->pruebas as $prueba) {
+                if ($prueba->tipo == 'race' && $prueba->relationLoaded('obstaculos')) {
+                    $prueba->appendsFullRelations(['obstaculos']);
+                }
+            }
+        }
     }
 
     public function getDurationAttribute(): int {

@@ -24,7 +24,17 @@ class EventosController extends Controller implements ItemController {
     ];
 
     public function all() {
-        $eventos = Evento::with(['entradas', 'pruebas'])->get();
+        $format = request()->get('format');
+
+        if ($format === 'full') {
+            $eventos = Evento::with(['pruebas.obstaculos', 'entradas'])->get();
+            $eventos->each(function($evento) {
+                $evento->appendsFullRelations(['pruebas', 'entradas']);
+            });
+        } else {
+            $eventos = Evento::with(['entradas', 'pruebas'])->get();
+        }
+
         response()->json($eventos);
     }
 
@@ -170,7 +180,18 @@ class EventosController extends Controller implements ItemController {
      * Get the current ongoing event, if any
      */
     public function current() {
-        $evento = Evento::getCurrent();
+        $format = request()->get('format');
+
+        $query = Evento::current();
+
+        if ($format === 'full') {
+            if ($evento = $query->with(['pruebas.obstaculos', 'entradas'])->first()) {
+                $evento->appendsFullRelations(['pruebas', 'entradas']);
+            }
+        } else {
+            $evento = $query->first();
+        }
+
         response()->json($evento);
     }
 }

@@ -2,16 +2,13 @@
 
 app()->group('evento', ['middleware' => 'auth.required', function () {
     // Get all eventos
-    app()->get('/', ['middleware' => 'is:admin|taquilla|adulto', 'EventosController@all']);
+    app()->get('/', ['middleware' => 'is:admin|taquilla|monitor|adulto', 'EventosController@all']);
 
     // Get a single evento
     app()->get('/(\d+)', ['middleware' => 'is:admin|taquilla|adulto', 'EventosController@get']);
 
     // Summary of a single evento
     app()->get('/(\d+)/summary', ['middleware' => 'is:admin|taquilla', 'EventosController@summary']);
-
-    // Data for monitor app of a single evento
-    app()->get('/(\d+)/monitor', ['middleware' => 'is:admin|taquilla|monitor', 'EventosController@monitor']);
 
     // Create a new evento
     app()->post('/', ['middleware' => 'is:admin', 'EventosController@create']);
