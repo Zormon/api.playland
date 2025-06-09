@@ -38,7 +38,7 @@ class Reserva extends Model {
     public function entrada() {
         return $this->belongsTo(Entrada::class);
     }
-    
+
     /**
      * Scope a query to only include reservas for a specific equipo.
      *
@@ -81,5 +81,16 @@ class Reserva extends Model {
      */
     public function scopeWithPaymentStatus($query, $status) {
         return $query->where('pagado', $status);
+    }
+
+    /**
+     * Scope a query to only include reservas for today.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeToday($query) {
+        $today = date('Y-m-d');
+        return $query->whereDate('dia', $today);
     }
 }

@@ -1,31 +1,51 @@
 {
     "INVALID_FIELDS": {
-        "error": "invalid_fields",
+        "error": "INVALID_FIELDS",
         "message": "Faltan campos requeridos o son inválidos."
     },
     "ADULT_NOT_FOUND": {
-        "error": "adult_not_found"
+        "error": "ADULT_NOT_FOUND"
     },
     "EVENT_NOT_FOUND": {
-        "error": "event_not_found"
+        "error": "EVENT_NOT_FOUND"
+    },
+    "TEAM_NOT_FOUND": {
+        "error": "TEAM_NOT_FOUND",
+        "message": "El equipo no existe."
     },
     "MISSING_EVENT_PARAM": {
-        "error": "missing_required_param",
+        "error": "MISSING_EVENT_PARAM",
         "param": "event"
     },
     "EVENT_DATE_OVERLAP": {
-        "error": "event_date_overlap",
+        "error": "EVENT_DATE_OVERLAP",
         "param": "fecha",
         "message": "Ya existe un evento en esa fecha."
     },
     "INVALID_DATE_RANGE": {
-        "error": "invalid_date_range",
+        "error": "INVALID_DATE_RANGE",
         "param": "fecha",
         "message": "La fecha de inicio no puede ser mayor a la fecha de fin."
     },
     "OBSTACLES_NOT_ALLOWED": {
-        "error": "obstacles_not_allowed",
+        "error": "OBSTACLES_NOT_ALLOWED",
         "param": "obstaculos",
         "message": "No se pueden agregar obstáculos a este evento."
+    },
+    "NO_CURRENT_EVENT": {
+        "error": "NO_CURRENT_EVENT",
+        "message": "No hay un evento activo en este momento."
+    },
+    "PRUEBA_NOT_IN_EVENT": {
+        "error": "PRUEBA_NOT_IN_EVENT",
+        "message": "La prueba no pertenece al evento actual."
+    },
+    "TEAM_HAS_NOT_PAID_TODAY": {
+        "error": "TEAM_HAS_NOT_PAID_TODAY",
+        "message": "El equipo no tiene una reserva para hoy."
+    },
+    "TEAM_MAX_ATTEMPTS_REACHED": {
+        "error": "TEAM_MAX_ATTEMPTS_REACHED",
+        "message": "El equipo ha alcanzado el número máximo de intentos permitidos."
     }
 }
