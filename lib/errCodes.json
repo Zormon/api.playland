@@ -47,5 +47,13 @@
     "TEAM_MAX_ATTEMPTS_REACHED": {
         "error": "TEAM_MAX_ATTEMPTS_REACHED",
         "message": "El equipo ha alcanzado el número máximo de intentos permitidos."
+    },
+    "MISSING_SCORE": {
+        "error": "MISSING_SCORE",
+        "message": "El resultado es obligatorio."
+    },
+    "DATABASE_ERROR": {
+        "error": "DATABASE_ERROR",
+        "message": "Error en la base de datos."
     }
 }
