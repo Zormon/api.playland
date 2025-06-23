@@ -17,6 +17,9 @@
         "error": "MISSING_EVENT_PARAM",
         "param": "event"
     },
+    "INVALID_OBSTACLE": {
+        "error": "INVALID_OBSTACLE"
+    },
     "EVENT_DATE_OVERLAP": {
         "error": "EVENT_DATE_OVERLAP",
         "param": "fecha",
@@ -30,7 +33,7 @@
     "OBSTACLES_NOT_ALLOWED": {
         "error": "OBSTACLES_NOT_ALLOWED",
         "param": "obstaculos",
-        "message": "No se pueden agregar obstáculos a este evento."
+        "message": "No se pueden agregar obstáculos a una prueba que no sea de tipo 'race'."
     },
     "NO_CURRENT_EVENT": {
         "error": "NO_CURRENT_EVENT",
@@ -48,12 +51,39 @@
         "error": "TEAM_MAX_ATTEMPTS_REACHED",
         "message": "El equipo ha alcanzado el número máximo de intentos permitidos."
     },
-    "MISSING_SCORE": {
+    "MISSING_SCORE_PARAM": {
         "error": "MISSING_SCORE",
+        "param": "score",
         "message": "El resultado es obligatorio."
+    },
+    "INVALID_SCORE": {
+        "error": "INVALID_SCORE",
+        "param": "score",
+        "message": "El resultado debe ser un número."
+    },
+    "INVALID_OBSTACLE_SCORE": {
+        "error": "INVALID_OBSTACLE_SCORE",
+        "param": "score",
+        "message": "El resultado del obstáculo debe ser 0 o 1."
     },
     "DATABASE_ERROR": {
         "error": "DATABASE_ERROR",
         "message": "Error en la base de datos."
+    },
+    "RACE_ALREADY_STARTED": {
+        "error": "RACE_ALREADY_STARTED",
+        "message": "El equipo ya ha comenzado esta carrera."
+    },
+    "RACE_NOT_STARTED": {
+        "error": "RACE_NOT_STARTED",
+        "message": "El equipo no ha comenzado esta carrera."
+    },
+    "INVALID_RACE_RESULT": {
+        "error": "INVALID_RACE_RESULT",
+        "message": "Resultado inválido para prueba tipo carrera."
+    },
+    "OBSTACLE_NOT_IN_PRUEBA": {
+        "error": "OBSTACLE_NOT_IN_PRUEBA",
+        "message": "El obstáculo no pertenece a la prueba."
     }
 }
