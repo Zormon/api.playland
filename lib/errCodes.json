@@ -85,5 +85,9 @@
     "OBSTACLE_NOT_IN_PRUEBA": {
         "error": "OBSTACLE_NOT_IN_PRUEBA",
         "message": "El obstáculo no pertenece a la prueba."
+    },
+    "OBSTACLE_ALREADY_PASSED": {
+        "error": "OBSTACLE_ALREADY_PASSED",
+        "message": "El obstáculo ya ha sido superado por el equipo."
     }
 }
