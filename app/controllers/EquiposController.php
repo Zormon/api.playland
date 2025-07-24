@@ -98,8 +98,8 @@ class EquiposController extends Controller implements ItemController {
         } catch (QueryException $e) {
             $this->handleDatabaseError($e);
         }
-        
-        Cache::delete(self::aCacheKey($equipo->adulto_id));
+
+        Cache::delete([self::CACHE_KEYS['all'], self::aCacheKey($equipo->adulto_id)]);
         response()->noContent();
     }
 
