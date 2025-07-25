@@ -97,7 +97,7 @@ class ReservasController extends Controller implements ItemController {
             response()->exit(null, 404);
         }
 
-        $evento = Evento::find($reservaData);
+        $evento = Evento::find($reservaData['evento_id']);
         if (!$evento ) {
             response()->exit(Err::get('EVENT_NOT_FOUND'), 404);
         }
